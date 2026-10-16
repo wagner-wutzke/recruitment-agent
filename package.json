@@ -1,0 +1,14 @@
+{
+  "name": "recruitment-agent",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node --test src/test/js/*.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "private": true,
+  "type": "commonjs",
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}
