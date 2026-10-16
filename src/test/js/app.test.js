@@ -3,10 +3,13 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 const { JSDOM } = require("jsdom");
+const createDOMPurify = require("dompurify");
+const { marked } = require("marked");
 
 const root = path.resolve(__dirname, "../../..");
 const html = fs.readFileSync(path.join(root, "src/main/resources/static/index.html"), "utf8");
 const script = fs.readFileSync(path.join(root, "src/main/resources/static/app.js"), "utf8");
+const styles = fs.readFileSync(path.join(root, "src/main/resources/static/styles.css"), "utf8");
 const offer = {
   id: "offer-1",
   jobName: "Backend Engineer",
@@ -14,11 +17,18 @@ const offer = {
   requiredQualifications: "Five years of Java experience",
   location: "Dublin",
   allocation: "Remote",
+  responsibilities: "Lead platform work",
+  benefits: "Health coverage",
+  companyName: "Example Corp",
+  niceToHave: "Kubernetes experience",
+  compensation: "Competitive salary",
 };
 
 async function loadPage(fetchImplementation) {
   const dom = new JSDOM(html, { runScripts: "outside-only", url: "http://localhost/" });
   dom.window.fetch = fetchImplementation;
+  dom.window.marked = marked;
+  dom.window.DOMPurify = createDOMPurify(dom.window);
   dom.window.eval(script);
   await new Promise((resolve) => setImmediate(resolve));
   return dom;
@@ -34,6 +44,11 @@ function fillForm(document, values = offer) {
   document.querySelector("#job-qualifications").value = values.requiredQualifications;
   document.querySelector("#job-location").value = values.location;
   document.querySelector("#job-allocation").value = values.allocation;
+  document.querySelector("#responsibilities").value = values.responsibilities;
+  document.querySelector("#benefits").value = values.benefits;
+  document.querySelector("#company-name").value = values.companyName;
+  document.querySelector("#nice-to-have").value = values.niceToHave;
+  document.querySelector("#compensation").value = values.compensation;
 }
 
 async function submitForm(dom) {
@@ -48,11 +63,115 @@ test("loads offers, selects details, and shows management controls appropriately
   const { document } = dom.window;
 
   assert.equal(document.querySelectorAll(".offer-button").length, 1);
+  assert.equal(document.querySelector(".offer-company").textContent, offer.companyName);
   assert.equal(document.querySelector("#edit-offer").classList.contains("d-none"), true);
   assert.equal(document.querySelector("#new-offer").textContent, "New Job Offer");
   document.querySelector(".offer-button").click();
   assert.equal(document.querySelector("#detail-name").textContent, offer.jobName);
   assert.equal(document.querySelector("#edit-offer").classList.contains("d-none"), false);
+  assert.equal(document.querySelector("#edit-offer").parentElement, document.querySelector(".action-panel"));
+  assert.equal(document.querySelector("#new-offer").parentElement, document.querySelector(".action-panel"));
+  dom.window.close();
+});
+
+test("keeps layout dimensions responsive and contains actions in their panel", async () => {
+  for (const viewportWidth of [1600, 375]) {
+    const dom = await loadPage(async () => response([offer]));
+    const { document } = dom.window;
+    dom.window.innerWidth = viewportWidth;
+
+    assert.match(styles, /\.page-width\s*\{[^}]*width:\s*min\(1480px,\s*100%\)/s);
+    assert.match(styles, /\.details-panel\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*1024px/s);
+    assert.match(styles, /\.action-panel\s*\{[^}]*max-width:\s*1480px;[^}]*width:\s*calc\(100%\s*\+\s*1\.5rem\)/s);
+    assert.match(styles, /@media\s*\(max-width:\s*1320px\)\s*\{[^}]*\.workspace\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
+
+    const editButton = document.querySelector("#edit-offer");
+    const newButton = document.querySelector("#new-offer");
+    const actionPanel = document.querySelector(".action-panel");
+    assert.equal(editButton.parentElement, actionPanel);
+    assert.equal(newButton.parentElement, actionPanel);
+    assert.equal(editButton.classList.contains("d-none"), true);
+    assert.equal(newButton.classList.contains("d-none"), false);
+
+    document.querySelector(".offer-button").click();
+    assert.equal(editButton.classList.contains("d-none"), false);
+    assert.equal(newButton.classList.contains("d-none"), false);
+    dom.window.close();
+  }
+});
+
+test("arranges requested detail and modal fields vertically in the specified order", async () => {
+  const dom = await loadPage(async () => response([offer]));
+  const { document } = dom.window;
+  const detailLabels = [...document.querySelectorAll("#offer-details .detail-item h3")]
+    .map((heading) => heading.textContent);
+  const formLabels = [...document.querySelectorAll("#offer-form label")]
+    .map((label) => label.textContent.trim());
+  const requestedOrder = ["Description", "Responsibilities", "Required qualifications", "Nice to Have", "Benefits"];
+  const requestedFormOrder = ["Job description", "Responsibilities", "Required qualifications", "Nice to Have", "Benefits"];
+
+  assert.deepEqual(detailLabels.slice(0, 5), requestedOrder);
+  assert.deepEqual(formLabels.filter((label) => requestedFormOrder.includes(label)), requestedFormOrder);
+  assert.match(styles, /\.detail-grid\s*\{[^}]*grid-template-columns:\s*1fr/s);
+  assert.match(styles, /\.details-panel\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*1024px/s);
+  dom.window.close();
+});
+
+test("renders required detail fields as Markdown and sanitizes unsafe markup and links", async () => {
+  const markdownOffer = {
+    ...offer,
+    jobDescription: "# Platform role\n\n**Build** *reliable* services\n\n- First\n- Second\n\n[Safe](https://example.com) [Email](mailto:team@example.com)",
+    requiredQualifications: "1. Java\n2. Spring\n\n[Unsafe](javascript:alert(1)) <img src=x onerror=alert(1)><script>alert(1)</script>",
+  };
+  const dom = await loadPage(async () => response([markdownOffer]));
+  const { document } = dom.window;
+  document.querySelector(".offer-button").click();
+
+  assert.ok(document.querySelector("#detail-description h1"));
+  assert.ok(document.querySelector("#detail-description strong"));
+  assert.ok(document.querySelector("#detail-description em"));
+  assert.equal(document.querySelectorAll("#detail-description ul li").length, 2);
+  assert.equal(document.querySelectorAll("#detail-description a").length, 2);
+  assert.equal(document.querySelector("#detail-description a").getAttribute("href"), "https://example.com");
+  assert.equal(document.querySelectorAll("#detail-description a")[1].getAttribute("href"), "mailto:team@example.com");
+  assert.equal(document.querySelectorAll("#detail-qualifications ol li").length, 2);
+  assert.equal(document.querySelector("#detail-qualifications a")?.getAttribute("href"), null);
+  assert.equal(document.querySelector("#detail-qualifications img").getAttribute("onerror"), null);
+  assert.equal(document.querySelector("#detail-qualifications script"), null);
+  assert.equal(document.querySelector("#detail-qualifications").textContent.includes("onerror"), false);
+  dom.window.close();
+});
+
+test("shows optional detail fields and renders legacy missing values as empty", async () => {
+  const fullOffer = {
+    ...offer,
+    responsibilities: "**Own** platform reliability",
+    benefits: "- Health insurance\n- Paid leave",
+    niceToHave: "*Kubernetes* experience",
+    compensation: "$120,000",
+  };
+  const legacyOffer = {
+    id: "legacy",
+    jobName: offer.jobName,
+    jobDescription: offer.jobDescription,
+    requiredQualifications: offer.requiredQualifications,
+    location: offer.location,
+    allocation: offer.allocation,
+  };
+  const dom = await loadPage(async () => response([fullOffer, legacyOffer]));
+  const { document } = dom.window;
+  document.querySelectorAll(".offer-button")[0].click();
+
+  assert.ok(document.querySelector("#detail-responsibilities strong"));
+  assert.equal(document.querySelectorAll("#detail-benefits li").length, 2);
+  assert.ok(document.querySelector("#detail-nice-to-have em"));
+  assert.equal(document.querySelector("#detail-compensation").textContent, "$120,000");
+
+  document.querySelectorAll(".offer-button")[1].click();
+  assert.equal(document.querySelector("#detail-responsibilities").textContent, "");
+  assert.equal(document.querySelector("#detail-benefits").textContent, "");
+  assert.equal(document.querySelector("#detail-nice-to-have").textContent, "");
+  assert.equal(document.querySelector("#detail-compensation").textContent, "");
   dom.window.close();
 });
 
@@ -66,6 +185,12 @@ test("opens a blank required form with the specified allocation options and no e
   assert.equal(document.querySelector("#offer-modal").classList.contains("show"), true);
   assert.equal(document.querySelector("#job-name").value, "");
   assert.equal(document.querySelectorAll("#job-allocation option").length, 4);
+  assert.equal(document.querySelectorAll("#offer-form [name='responsibilities'], #offer-form [name='benefits'], #offer-form [name='companyName'], #offer-form [name='niceToHave'], #offer-form [name='compensation']").length, 5);
+  assert.equal(document.querySelector("#responsibilities").required, false);
+  assert.equal(document.querySelector("#benefits").required, false);
+  assert.equal(document.querySelector("#company-name").required, false);
+  assert.equal(document.querySelector("#nice-to-have").required, false);
+  assert.equal(document.querySelector("#compensation").required, false);
   assert.deepEqual(
     [...document.querySelectorAll("#job-allocation option")].slice(1).map((option) => option.value),
     ["Remote", "Hybrid", "On-site"],
@@ -113,7 +238,7 @@ test("marks every empty field invalid only after save", async () => {
 
 test("prefills the edit form and saves changes, selecting refreshed offer", async () => {
   let updateRequest;
-  const updated = { ...offer, jobName: "Senior Backend Engineer", allocation: "Hybrid" };
+  const updated = { ...offer, jobName: "Senior Backend Engineer", allocation: "Hybrid", companyName: "Updated Corp" };
   const dom = await loadPage(async (url, options) => {
     if (!options) return response([offer]);
     updateRequest = { url, options };
@@ -123,14 +248,31 @@ test("prefills the edit form and saves changes, selecting refreshed offer", asyn
   document.querySelector(".offer-button").click();
   document.querySelector("#edit-offer").click();
   assert.equal(document.querySelector("#job-name").value, offer.jobName);
+  assert.equal(document.querySelector("#responsibilities").value, offer.responsibilities);
+  assert.equal(document.querySelector("#benefits").value, offer.benefits);
+  assert.equal(document.querySelector("#company-name").value, offer.companyName);
+  assert.equal(document.querySelector("#nice-to-have").value, offer.niceToHave);
+  assert.equal(document.querySelector("#compensation").value, offer.compensation);
   fillForm(document, updated);
   await submitForm(dom);
 
   assert.equal(updateRequest.url, "/api/job-offers/offer-1");
   assert.equal(updateRequest.options.method, "PUT");
   assert.equal(JSON.parse(updateRequest.options.body).allocation, "Hybrid");
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(JSON.parse(updateRequest.options.body)).filter(([key]) =>
+      ["responsibilities", "benefits", "companyName", "niceToHave", "compensation"].includes(key))),
+    {
+      responsibilities: updated.responsibilities,
+      benefits: updated.benefits,
+      companyName: updated.companyName,
+      niceToHave: updated.niceToHave,
+      compensation: updated.compensation,
+    },
+  );
   assert.equal(document.querySelector("#detail-name").textContent, updated.jobName);
   assert.equal(document.querySelector("#detail-allocation").textContent, "Hybrid");
+  assert.equal(document.querySelector(".offer-company").textContent, "Updated Corp");
   assert.equal(document.querySelector(".offer-button").getAttribute("aria-current"), "true");
   assert.equal(document.querySelector("#offer-modal").classList.contains("show"), false);
   dom.window.close();
@@ -151,6 +293,17 @@ test("creates offer and shows selected details after successful save", async () 
 
   assert.equal(createRequest.url, "/api/job-offers");
   assert.equal(createRequest.options.method, "POST");
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(JSON.parse(createRequest.options.body)).filter(([key]) =>
+      ["responsibilities", "benefits", "companyName", "niceToHave", "compensation"].includes(key))),
+    {
+      responsibilities: offer.responsibilities,
+      benefits: offer.benefits,
+      companyName: offer.companyName,
+      niceToHave: offer.niceToHave,
+      compensation: offer.compensation,
+    },
+  );
   assert.equal(document.querySelectorAll(".offer-button").length, 1);
   assert.equal(document.querySelector(".offer-button").getAttribute("aria-current"), "true");
   assert.equal(document.querySelector("#detail-name").textContent, offer.jobName);

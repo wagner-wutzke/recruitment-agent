@@ -1,7 +1,9 @@
 package net.wowdev.recruitment.agent.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -16,6 +18,7 @@ import net.wowdev.recruitment.agent.service.JobOfferService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -29,6 +32,25 @@ class JobOfferControllerTest {
 
     private static String validOfferJson() {
         return "{\"jobName\":\"Backend Engineer\",\"jobDescription\":\"Build services\",\"requiredQualifications\":\"Java\",\"location\":\"Dublin\",\"allocation\":\"Remote\"}";
+    }
+
+    private static String offerWithEnhancementFieldsJson() {
+        return "{\"jobName\":\"Backend Engineer\",\"jobDescription\":\"Build services\",\"requiredQualifications\":\"Java\",\"location\":\"Dublin\",\"allocation\":\"Remote\",\"responsibilities\":\"Lead platform work\",\"benefits\":\"Health coverage\",\"companyName\":\"Example Corp\",\"niceToHave\":\"Kubernetes experience\",\"compensation\":\"Competitive salary\"}";
+    }
+
+    private static JobOffer offerWithEnhancementFields(String id) {
+        return new JobOffer(
+                id,
+                "Backend Engineer",
+                "Build services",
+                "Java",
+                "Dublin",
+                "Remote",
+                "Lead platform work",
+                "Health coverage",
+                "Example Corp",
+                "Kubernetes experience",
+                "Competitive salary");
     }
 
     @BeforeEach
@@ -78,15 +100,24 @@ class JobOfferControllerTest {
 
     @Test
     void createsOfferAndReturnsCreatedResponse() throws Exception {
-        JobOffer saved = new JobOffer("new-id", "Backend Engineer", "Build services", "Java", "Dublin", "Remote");
+        JobOffer saved = offerWithEnhancementFields("new-id");
         when(jobOfferService.create(any(JobOffer.class))).thenReturn(saved);
 
         mockMvc.perform(post("/api/job-offers")
                         .contentType("application/json")
-                        .content(validOfferJson()))
+                        .content(offerWithEnhancementFieldsJson()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value("new-id"))
-                .andExpect(jsonPath("$.jobName").value("Backend Engineer"));
+                .andExpect(jsonPath("$.jobName").value("Backend Engineer"))
+                .andExpect(jsonPath("$.responsibilities").value("Lead platform work"))
+                .andExpect(jsonPath("$.benefits").value("Health coverage"))
+                .andExpect(jsonPath("$.companyName").value("Example Corp"))
+                .andExpect(jsonPath("$.niceToHave").value("Kubernetes experience"))
+                .andExpect(jsonPath("$.compensation").value("Competitive salary"));
+
+        ArgumentCaptor<JobOffer> capturedOffer = ArgumentCaptor.forClass(JobOffer.class);
+        verify(jobOfferService).create(capturedOffer.capture());
+        assertEnhancementFields(capturedOffer.getValue());
     }
 
     @Test
@@ -108,14 +139,31 @@ class JobOfferControllerTest {
 
     @Test
     void updatesExistingOffer() throws Exception {
-        JobOffer saved = new JobOffer("offer-1", "Backend Engineer", "Build services", "Java", "Dublin", "Hybrid");
+        JobOffer saved = offerWithEnhancementFields("offer-1");
         when(jobOfferService.update(eq("offer-1"), any(JobOffer.class))).thenReturn(saved);
 
         mockMvc.perform(put("/api/job-offers/offer-1")
                         .contentType("application/json")
-                        .content(validOfferJson()))
+                        .content(offerWithEnhancementFieldsJson()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value("offer-1"));
+                .andExpect(jsonPath("$.id").value("offer-1"))
+                .andExpect(jsonPath("$.responsibilities").value("Lead platform work"))
+                .andExpect(jsonPath("$.benefits").value("Health coverage"))
+                .andExpect(jsonPath("$.companyName").value("Example Corp"))
+                .andExpect(jsonPath("$.niceToHave").value("Kubernetes experience"))
+                .andExpect(jsonPath("$.compensation").value("Competitive salary"));
+
+        ArgumentCaptor<JobOffer> capturedOffer = ArgumentCaptor.forClass(JobOffer.class);
+        verify(jobOfferService).update(eq("offer-1"), capturedOffer.capture());
+        assertEnhancementFields(capturedOffer.getValue());
+    }
+
+    private static void assertEnhancementFields(JobOffer jobOffer) {
+        assertEquals("Lead platform work", jobOffer.responsibilities());
+        assertEquals("Health coverage", jobOffer.benefits());
+        assertEquals("Example Corp", jobOffer.companyName());
+        assertEquals("Kubernetes experience", jobOffer.niceToHave());
+        assertEquals("Competitive salary", jobOffer.compensation());
     }
 
     @Test

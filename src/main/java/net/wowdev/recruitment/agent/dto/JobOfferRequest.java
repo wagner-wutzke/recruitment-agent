@@ -10,9 +10,25 @@ public record JobOfferRequest(
     @NotBlank String jobDescription,
     @NotBlank String requiredQualifications,
     @NotBlank String location,
-    @NotNull @Pattern(regexp = "Remote|Hybrid|On-site") String allocation) {
+    @NotNull @Pattern(regexp = "Remote|Hybrid|On-site") String allocation,
+    String responsibilities,
+    String benefits,
+    String companyName,
+    String niceToHave,
+    String compensation) {
 
   public JobOffer toDocument(String id) {
-    return new JobOffer(id, jobName, jobDescription, requiredQualifications, location, allocation);
+    return new JobOffer(
+        id,
+        jobName,
+        jobDescription,
+        requiredQualifications,
+        location,
+        allocation,
+        responsibilities,
+        benefits,
+        companyName,
+        niceToHave,
+        compensation);
   }
 }

@@ -10,4 +10,31 @@ public record JobOffer(
     String jobDescription,
     String requiredQualifications,
     String location,
-    String allocation) {}
+    String allocation,
+    String responsibilities,
+    String benefits,
+    String companyName,
+    String niceToHave,
+    String compensation) {
+
+  public JobOffer(
+      String id,
+      String jobName,
+      String jobDescription,
+      String requiredQualifications,
+      String location,
+      String allocation) {
+    this(
+        id,
+        jobName,
+        jobDescription,
+        requiredQualifications,
+        location,
+        allocation,
+        null,
+        null,
+        null,
+        null,
+        null);
+  }
+}

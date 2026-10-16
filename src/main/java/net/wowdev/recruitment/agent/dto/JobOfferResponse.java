@@ -8,7 +8,12 @@ public record JobOfferResponse(
     String jobDescription,
     String requiredQualifications,
     String location,
-    String allocation) {
+    String allocation,
+    String responsibilities,
+    String benefits,
+    String companyName,
+    String niceToHave,
+    String compensation) {
 
   public static JobOfferResponse from(JobOffer jobOffer) {
     return new JobOfferResponse(
@@ -17,6 +22,11 @@ public record JobOfferResponse(
         jobOffer.jobDescription(),
         jobOffer.requiredQualifications(),
         jobOffer.location(),
-        jobOffer.allocation());
+        jobOffer.allocation(),
+        jobOffer.responsibilities(),
+        jobOffer.benefits(),
+        jobOffer.companyName(),
+        jobOffer.niceToHave(),
+        jobOffer.compensation());
   }
 }

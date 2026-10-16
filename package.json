@@ -9,6 +9,8 @@
   "private": true,
   "type": "commonjs",
   "devDependencies": {
-    "jsdom": "^26.1.0"
+    "dompurify": "3.4.17",
+    "jsdom": "^26.1.0",
+    "marked": "18.1.1"
   }
 }

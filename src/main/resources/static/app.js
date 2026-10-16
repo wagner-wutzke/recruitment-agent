@@ -6,7 +6,19 @@ const offerDetails = document.querySelector("#offer-details");
 const editButton = document.querySelector("#edit-offer");
 const modalElement = document.querySelector("#offer-modal");
 const form = document.querySelector("#offer-form");
-const fields = ["jobName", "jobDescription", "requiredQualifications", "location", "allocation"];
+const fields = [
+  "jobName",
+  "jobDescription",
+  "requiredQualifications",
+  "location",
+  "allocation",
+  "responsibilities",
+  "benefits",
+  "companyName",
+  "niceToHave",
+  "compensation",
+];
+const requiredFields = ["jobName", "jobDescription", "requiredQualifications", "location", "allocation"];
 const fieldElements = Object.fromEntries(
     fields.map((name) => [name, form.elements.namedItem(name)]));
 const fieldErrors = {
@@ -28,6 +40,22 @@ function setText(selector, value) {
   document.querySelector(selector).textContent = value ?? "";
 }
 
+function setMarkdown(selector, value) {
+  const element = document.querySelector(selector);
+  if (value == null || value === "") {
+    element.replaceChildren();
+    return;
+  }
+  if (!window.marked || !window.DOMPurify) {
+    element.textContent = value;
+    return;
+  }
+  const html = window.marked.parse(value);
+  element.innerHTML = window.DOMPurify.sanitize(html, {
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|(?:[/.#][^:]*)$)/i,
+  });
+}
+
 function formValues() {
   return Object.fromEntries(fields.map((name) => [name, fieldElements[name].value]));
 }
@@ -44,8 +72,12 @@ function selectOffer(offer) {
       (button) => button.dataset.offerId === offer.id);
   selectedButton?.setAttribute("aria-current", "true");
   setText("#detail-name", offer.jobName);
-  setText("#detail-description", offer.jobDescription);
-  setText("#detail-qualifications", offer.requiredQualifications);
+  setMarkdown("#detail-description", offer.jobDescription);
+  setMarkdown("#detail-qualifications", offer.requiredQualifications);
+  setMarkdown("#detail-responsibilities", offer.responsibilities);
+  setMarkdown("#detail-benefits", offer.benefits);
+  setMarkdown("#detail-nice-to-have", offer.niceToHave);
+  setText("#detail-compensation", offer.compensation);
   setText("#detail-location", offer.location);
   setText("#detail-allocation", offer.allocation);
   detailsEmpty.classList.add("d-none");
@@ -69,7 +101,10 @@ function renderOffers() {
     name.textContent = offer.jobName ?? "Untitled role";
     const location = document.createElement("span");
     location.textContent = [offer.location, offer.allocation].filter(Boolean).join(" · ");
-    button.append(name, location);
+    const company = document.createElement("span");
+    company.className = "offer-company";
+    company.textContent = offer.companyName ?? "";
+    button.append(name, location, company);
     button.addEventListener("click", () => selectOffer(offer));
     item.append(button);
     offerList.append(item);
@@ -107,7 +142,7 @@ async function loadOffers() {
 
 function resetValidation() {
   saveAttempted = false;
-  fields.forEach((name) => {
+  requiredFields.forEach((name) => {
     const element = fieldElements[name];
     element.classList.remove("is-invalid");
     element.removeAttribute("aria-invalid");
@@ -117,7 +152,7 @@ function resetValidation() {
 
 function validateForm() {
   let valid = true;
-  fields.forEach((name) => {
+  requiredFields.forEach((name) => {
     const element = fieldElements[name];
     const fieldIsValid = element.value.trim() !== "";
     element.classList.toggle("is-invalid", !fieldIsValid);

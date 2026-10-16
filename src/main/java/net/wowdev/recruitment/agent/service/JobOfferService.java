@@ -34,6 +34,11 @@ public class JobOfferService {
             jobOffer.jobDescription(),
             jobOffer.requiredQualifications(),
             jobOffer.location(),
-            jobOffer.allocation()));
+            jobOffer.allocation(),
+            jobOffer.responsibilities(),
+            jobOffer.benefits(),
+            jobOffer.companyName(),
+            jobOffer.niceToHave(),
+            jobOffer.compensation()));
   }
 }

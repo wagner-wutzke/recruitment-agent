@@ -34,7 +34,12 @@ class JobOfferMappingTest {
             "Build backend services",
             "Five years of Java experience",
             "Dublin",
-            "Remote");
+            "Remote",
+            "Lead platform work",
+            "Health coverage",
+            "Example Corp",
+            "Kubernetes experience",
+            "Competitive salary");
     Document document = new Document();
 
     converter.write(jobOffer, document);
@@ -46,6 +51,30 @@ class JobOfferMappingTest {
     assertEquals(jobOffer.requiredQualifications(), document.getString("requiredQualifications"));
     assertEquals(jobOffer.location(), document.getString("location"));
     assertEquals(jobOffer.allocation(), document.getString("allocation"));
+    assertEquals(jobOffer.responsibilities(), document.getString("responsibilities"));
+    assertEquals(jobOffer.benefits(), document.getString("benefits"));
+    assertEquals(jobOffer.companyName(), document.getString("companyName"));
+    assertEquals(jobOffer.niceToHave(), document.getString("niceToHave"));
+    assertEquals(jobOffer.compensation(), document.getString("compensation"));
     assertEquals(jobOffer, converter.read(JobOffer.class, document));
+  }
+
+  @Test
+  void readsLegacyDocumentWithoutEnhancementFields() {
+    Document document =
+        new Document("_id", new ObjectId("6650c4c93f1b8f0a6f8a1234"))
+            .append("jobName", "Backend Engineer")
+            .append("jobDescription", "Build backend services")
+            .append("requiredQualifications", "Five years of Java experience")
+            .append("location", "Dublin")
+            .append("allocation", "Remote");
+
+    JobOffer jobOffer = converter.read(JobOffer.class, document);
+
+    assertEquals(null, jobOffer.responsibilities());
+    assertEquals(null, jobOffer.benefits());
+    assertEquals(null, jobOffer.companyName());
+    assertEquals(null, jobOffer.niceToHave());
+    assertEquals(null, jobOffer.compensation());
   }
 }

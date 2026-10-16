@@ -24,7 +24,18 @@ class JobOfferServiceTest {
   @InjectMocks private JobOfferService jobOfferService;
 
   private static JobOffer offer(String id, String name) {
-    return new JobOffer(id, name, "Lead a team", "Java experience", "Dublin", "Hybrid");
+    return new JobOffer(
+        id,
+        name,
+        "Lead a team",
+        "Java experience",
+        "Dublin",
+        "Hybrid",
+        "Own platform reliability",
+        "Health coverage",
+        "Example Corp",
+        "Kubernetes experience",
+        "Competitive salary");
   }
 
   @Test
@@ -63,13 +74,35 @@ class JobOfferServiceTest {
   }
 
   @Test
+  void createPreservesAllEnhancementFields() {
+    JobOffer jobOffer = offer(null, "Staff Engineer");
+    when(jobOfferRepository.save(jobOffer)).thenReturn(jobOffer);
+
+    JobOffer saved = jobOfferService.create(jobOffer);
+
+    assertEquals("Own platform reliability", saved.responsibilities());
+    assertEquals("Health coverage", saved.benefits());
+    assertEquals("Example Corp", saved.companyName());
+    assertEquals("Kubernetes experience", saved.niceToHave());
+    assertEquals("Competitive salary", saved.compensation());
+    verify(jobOfferRepository).save(jobOffer);
+  }
+
+  @Test
   void updatesExistingJobOfferKeepingItsId() {
     JobOffer request = offer(null, "Principal Engineer");
     JobOffer saved = offer("offer-1", "Principal Engineer");
     when(jobOfferRepository.existsById("offer-1")).thenReturn(true);
     when(jobOfferRepository.save(saved)).thenReturn(saved);
 
-    assertEquals(saved, jobOfferService.update("offer-1", request));
+    JobOffer updated = jobOfferService.update("offer-1", request);
+
+    assertEquals(saved, updated);
+    assertEquals("Own platform reliability", updated.responsibilities());
+    assertEquals("Health coverage", updated.benefits());
+    assertEquals("Example Corp", updated.companyName());
+    assertEquals("Kubernetes experience", updated.niceToHave());
+    assertEquals("Competitive salary", updated.compensation());
     verify(jobOfferRepository).existsById("offer-1");
     verify(jobOfferRepository).save(saved);
   }

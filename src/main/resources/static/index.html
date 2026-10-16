@@ -21,8 +21,8 @@
         <h1>Recruitment made easy</h1>
         <p class="subtitle">Explore open roles and find the details that matter.</p>
       </section>
-      <div class="row g-4 workspace">
-        <section class="col-12 col-lg-4" aria-labelledby="offers-heading">
+      <div class="workspace">
+        <section aria-labelledby="offers-heading">
           <div class="panel offer-panel h-100">
             <div class="panel-heading">
               <div><p class="eyebrow">OPPORTUNITIES</p><h2 id="offers-heading">Job offers</h2></div>
@@ -32,7 +32,7 @@
             <ul id="offer-list" class="offer-list list-unstyled mb-0" aria-label="Job offers"></ul>
           </div>
         </section>
-        <section class="col-12 col-lg-8" aria-labelledby="details-heading">
+        <section aria-labelledby="details-heading">
           <div class="panel details-panel h-100">
             <p class="eyebrow">ROLE PROFILE</p>
             <div id="details-empty" class="details-empty">
@@ -43,18 +43,22 @@
             <article id="offer-details" class="offer-details d-none" aria-live="polite">
               <h2 id="detail-name"></h2>
               <div class="detail-grid">
-                <section class="detail-item detail-wide"><h3>Description</h3><p id="detail-description"></p></section>
-                <section class="detail-item detail-wide"><h3>Required qualifications</h3><p id="detail-qualifications"></p></section>
+                <section class="detail-item detail-wide"><h3>Description</h3><div id="detail-description" class="markdown-content"></div></section>
+                <section class="detail-item detail-wide"><h3>Responsibilities</h3><div id="detail-responsibilities" class="markdown-content"></div></section>
+                <section class="detail-item detail-wide"><h3>Required qualifications</h3><div id="detail-qualifications" class="markdown-content"></div></section>
+                <section class="detail-item detail-wide"><h3>Nice to Have</h3><div id="detail-nice-to-have" class="markdown-content"></div></section>
+                <section class="detail-item detail-wide"><h3>Benefits</h3><div id="detail-benefits" class="markdown-content"></div></section>
+                <section class="detail-item detail-wide"><h3>Compensation</h3><p id="detail-compensation"></p></section>
                 <section class="detail-item"><h3>Location</h3><p id="detail-location"></p></section>
                 <section class="detail-item"><h3>Allocation</h3><p id="detail-allocation"></p></section>
               </div>
             </article>
           </div>
-          <div class="details-actions d-flex gap-2 justify-content-end mt-3">
-            <button id="edit-offer" class="btn btn-outline-primary d-none" type="button">Edit</button>
-            <button id="new-offer" class="btn btn-primary" type="button">New Job Offer</button>
-          </div>
         </section>
+      </div>
+      <div class="panel action-panel d-flex gap-2 justify-content-end mt-3">
+        <button id="edit-offer" class="btn btn-outline-primary d-none" type="button">Edit</button>
+        <button id="new-offer" class="btn btn-primary" type="button">New Job Offer</button>
       </div>
     </main>
 
@@ -69,12 +73,15 @@
             <div class="modal-body">
               <p id="save-error" class="alert alert-danger d-none" role="alert"></p>
               <div class="mb-3"><label class="form-label" for="job-name">Job name</label><input class="form-control" id="job-name" name="jobName" required aria-describedby="job-name-error"><div class="invalid-feedback" id="job-name-error">This field is required.</div></div>
+              <div class="mb-3"><label class="form-label" for="company-name">Company Name</label><input class="form-control" id="company-name" name="companyName"></div>
               <div class="mb-3"><label class="form-label" for="job-description">Job description</label><textarea class="form-control" id="job-description" name="jobDescription" rows="3" required aria-describedby="job-description-error"></textarea><div class="invalid-feedback" id="job-description-error">This field is required.</div></div>
+              <div class="mb-3"><label class="form-label" for="responsibilities">Responsibilities</label><textarea class="form-control" id="responsibilities" name="responsibilities" rows="3"></textarea></div>
               <div class="mb-3"><label class="form-label" for="job-qualifications">Required qualifications</label><textarea class="form-control" id="job-qualifications" name="requiredQualifications" rows="3" required aria-describedby="job-qualifications-error"></textarea><div class="invalid-feedback" id="job-qualifications-error">This field is required.</div></div>
-              <div class="row g-3">
-                <div class="col-md-7"><label class="form-label" for="job-location">Location</label><input class="form-control" id="job-location" name="location" required aria-describedby="job-location-error"><div class="invalid-feedback" id="job-location-error">This field is required.</div></div>
-                <div class="col-md-5"><label class="form-label" for="job-allocation">Allocation</label><select class="form-select" id="job-allocation" name="allocation" required aria-describedby="job-allocation-error"><option value="">Choose allocation</option><option>Remote</option><option>Hybrid</option><option>On-site</option></select><div class="invalid-feedback" id="job-allocation-error">This field is required.</div></div>
-              </div>
+              <div class="mb-3"><label class="form-label" for="nice-to-have">Nice to Have</label><textarea class="form-control" id="nice-to-have" name="niceToHave" rows="3"></textarea></div>
+              <div class="mb-3"><label class="form-label" for="benefits">Benefits</label><textarea class="form-control" id="benefits" name="benefits" rows="3"></textarea></div>
+              <div class="mb-3"><label class="form-label" for="compensation">Compensation</label><textarea class="form-control" id="compensation" name="compensation" rows="3"></textarea></div>
+              <div class="mb-3"><label class="form-label" for="job-location">Location</label><input class="form-control" id="job-location" name="location" required aria-describedby="job-location-error"><div class="invalid-feedback" id="job-location-error">This field is required.</div></div>
+              <div class="mb-3"><label class="form-label" for="job-allocation">Allocation</label><select class="form-select" id="job-allocation" name="allocation" required aria-describedby="job-allocation-error"><option value="">Choose allocation</option><option>Remote</option><option>Hybrid</option><option>On-site</option></select><div class="invalid-feedback" id="job-allocation-error">This field is required.</div></div>
             </div>
             <div class="modal-footer"><button type="button" class="btn btn-light" id="cancel-offer">Cancel</button><button type="submit" class="btn btn-primary" id="save-offer">Save</button></div>
           </form>
@@ -86,6 +93,8 @@
       <div class="discard-dialog"><span class="empty-mark" aria-hidden="true">!</span><h2 id="discard-title">Discard your changes?</h2><p id="discard-message">Your unsaved changes will be lost.</p><div class="d-flex gap-2 justify-content-end"><button id="continue-editing" class="btn btn-light" type="button">Continue editing</button><button id="discard-changes" class="btn btn-danger" type="button">Discard changes</button></div></div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@18.1.1/lib/marked.umd.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.17/dist/purify.min.js" defer></script>
     <script src="/app.js" defer></script>
   </body>
 </html>
