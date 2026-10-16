@@ -24,7 +24,7 @@ Specifications are the source of truth for development.
 - Define acceptance criteria
 - Define functional and non-functional requirements
 - Update specifications when behavior changes
-- Create or update `03-tasks.md` when necessary
+- Create or update `[FEATURE]/03-tasks.md` when necessary
 
 ### Expected Spec Structure
 
@@ -49,7 +49,7 @@ Each feature must contain:
 
 ### Mission
 
-Implement code based on the specifications located in the `/specs` directory.
+Implement code based on the specifications located in the `/specs/[FEATURE}` directory.
 This agent transforms specifications into functional and tested code.
 
 ### General Rules

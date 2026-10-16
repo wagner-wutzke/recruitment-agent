@@ -30,3 +30,25 @@ When starting your coding cycle for the day on your authentication system's task
 It instantly finds specs/authentication/03-tasks.md, appends your global AGENTS.md rules, formats
 them cleanly, copies it directly into your clipboard, and you're ready to paste straight into your
 AI terminal context.
+
+## MongoDB Docker Container
+Run this command on terminal:
+```bash
+docker run -d --rm \
+  --name mongodb-local \
+  -p 27017:27017 \
+  -v mongo_local_data:/data/mongodb \
+  -e MONGO_INITDB_ROOT_USERNAME=admin \
+  -e MONGO_INITDB_ROOT_PASSWORD=secret_password \
+  -e GLIBC_TUNABLES=glibc.pthread.rseq=1 \
+  mongo:latest
+```
+
+Stop, start and delete the container later:
+```bash
+docker stop mongodb-server
+
+docker start mongodb-server
+
+docker rm mongodb-server
+```
