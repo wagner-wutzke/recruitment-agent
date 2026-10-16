@@ -1,6 +1,6 @@
 # Task List: UI Enhancements 01
 
-- **Status:** [x] Active | [ ] Paused | [ ] Completed
+- **Status:** [x] Active | [ ] Paused | [x] Completed
 - **Target Agent:** @engineer
 - **Validation Agent:** @reviewer
 - **References:** `01-requirements.md`, `02-design.md`

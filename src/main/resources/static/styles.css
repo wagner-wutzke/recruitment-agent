@@ -285,9 +285,10 @@ h1 {
 }
 
 .action-panel {
-  margin-left: -.75rem;
+  /*margin-left: -.75rem;*/
   max-width: 1480px;
-  width: calc(100% + 1.5rem);
+  /*width: calc(100% + 1.5rem);*/
+  width: 100%;
 }
 
 .offer-modal-content {

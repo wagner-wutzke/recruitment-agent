@@ -14,28 +14,31 @@ Add a list of enhancements for better view of information in the job offers list
 
 #### New text area fields
 
-- [ ] Item 1: Add a new field `Responsibilities` to the `JobOffer` document.
-- [ ] Item 2: Add a new field `Benefits` to the `JobOffer` document.
-- [ ] Item 3: Add a new field `Company Name` to the `JobOffer` document.
-- [ ] Item 4: Add a new field `Nice to Have` to the `JobOffer` document.
-- [ ] Item 5: Add a new text area field `Compensation` to the `JobOffer` document.
+- [x] Item 1: Add a new field `Responsibilities` to the `JobOffer` document.
+- [x] Item 2: Add a new field `Benefits` to the `JobOffer` document.
+- [x] Item 3: Add a new field `Company Name` to the `JobOffer` document.
+- [x] Item 4: Add a new field `Nice to Have` to the `JobOffer` document.
+- [x] Item 5: Add a new text area field `Compensation` to the `JobOffer` document.
 
 #### Markdown text for text areas
 
-- [ ] Item 6: When showing the `jobDescription`, `requiredQualifications`, `Benefits`,
+- [x] Item 6: When showing the `jobDescription`, `requiredQualifications`, `Benefits`,
   `Responsibilities` and `Nice to Have` fields in **Details**, the content must be formatted from
   Markdown content.
 
 #### Job Offer list fields
 
-- [ ] Item 7: The `Company Name` field must be shown in the Job Offers list entries
+- [x] Item 7: The `Company Name` field must be shown in the Job Offers list entries
 
 #### UI changes
 
-- [ ] Item 8: Main page content wrapper must have a maximum width of 1480 px and fit narrower viewports.
-- [ ] Item 9: Details panel must be 600 px wide on desktop, capped at the available parent width on smaller viewports, and right-aligned when beside the offer list.
-- [ ] Item 10: **Buttons** Edit and **New Job Offer** must be contained by a new panel with max 1480 px.
-- [ ] Item 11: Arrange the `Description`, `Responsibilities`, `Required qualifications`,
+- [x] Item 8: Main page content wrapper must have a maximum width of 1480 px and fit narrower
+  viewports.
+- [x] Item 9: Details panel must be 600 px wide on desktop, capped at the available parent width on
+  smaller viewports, and right-aligned when beside the offer list.
+- [x] Item 10: **Buttons** Edit and **New Job Offer** must be contained by a new panel with max 1480
+  px.
+- [x] Item 11: Arrange the `Description`, `Responsibilities`, `Required qualifications`,
   `Nice to Have`, and `Benefits` fields vertically (one per row). Apply this specific order to both
   the Details panel and the modal form.
 
@@ -155,20 +158,24 @@ These scenarios must be validated and verified by the `@reviewer`.
 
 - **Given** the recruiter is viewing the Job Offers page
 - **When** the page is displayed
-- **Then** the main page content wrapper must be **1480 px** wide when the viewport permits and must fit within narrower viewports without horizontal overflow.
+- **Then** the main page content wrapper must be **1480 px** wide when the viewport permits and must
+  fit within narrower viewports without horizontal overflow.
 
 ### Scenario 14: Setting the Details panel width
 
 - **Given** the recruiter is viewing the Job Offers page
 - **When** the **Details** panel is displayed
-- **Then** the Details panel must be **600 px** wide on desktop and no wider than its available parent width on smaller viewports.
-- **And** when the Details panel is beside the offer list, it must be right-aligned with no right margin.
+- **Then** the Details panel must be **600 px** wide on desktop and no wider than its available
+  parent width on smaller viewports.
+- **And** when the Details panel is beside the offer list, it must be right-aligned with no right
+  margin.
 
 ### Scenario 15: Adding a panel for action buttons
 
 - **Given** the recruiter is viewing the Job Offers page
 - **When** the page is displayed
-- **Then** a new panel with a maximum width of **1480 px**, fitted to the available viewport, must contain the **Edit** and **New Job Offer** buttons.
+- **Then** a new panel with a maximum width of **1480 px**, fitted to the available viewport, must
+  contain the **Edit** and **New Job Offer** buttons.
 - **And** both buttons must be positioned within the boundaries of the new panel.
 
 ### Scenario 16: Displaying action buttons based on job offer selection
@@ -185,22 +192,24 @@ These scenarios must be validated and verified by the `@reviewer`.
 
 - **Given** the recruiter is viewing the Job Offers page
 - **When** a job offer is selected and its details are displayed in the **Details** panel
-- **Then** the **Description**, **Responsibilities**, **Required Qualifications**, **Nice to Have**, and **Benefits** fields must be arranged vertically, with one field per row.
+- **Then** the **Description**, **Responsibilities**, **Required Qualifications**, **Nice to Have**,
+  and **Benefits** fields must be arranged vertically, with one field per row.
 - **And** the fields must appear in the following order:
-  1. Description
-  2. Responsibilities
-  3. Required Qualifications
-  4. Nice to Have
-  5. Benefits
+    1. Description
+    2. Responsibilities
+    3. Required Qualifications
+    4. Nice to Have
+    5. Benefits
 
 ### Scenario 18: Arranging fields vertically in the Job Offer modal form
 
 - **Given** the recruiter is creating or editing a job offer
 - **When** the Job Offer modal form is displayed
-- **Then** the **Description**, **Responsibilities**, **Required Qualifications**, **Nice to Have**, and **Benefits** fields must be arranged vertically, with one field per row.
+- **Then** the **Description**, **Responsibilities**, **Required Qualifications**, **Nice to Have**,
+  and **Benefits** fields must be arranged vertically, with one field per row.
 - **And** the fields must appear in the following order:
-  1. Description
-  2. Responsibilities
-  3. Required Qualifications
-  4. Nice to Have
-  5. Benefits
+    1. Description
+    2. Responsibilities
+    3. Required Qualifications
+    4. Nice to Have
+    5. Benefits
