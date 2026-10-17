@@ -2,7 +2,7 @@ package net.wowdev.recruitment.agent.service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import net.wowdev.recruitment.agent.document.JobOffer;
+import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.repository.JobOfferRepository;
 import org.springframework.stereotype.Service;
 

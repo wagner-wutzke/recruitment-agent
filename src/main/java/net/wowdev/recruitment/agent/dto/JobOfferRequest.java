@@ -3,7 +3,7 @@ package net.wowdev.recruitment.agent.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import net.wowdev.recruitment.agent.document.JobOffer;
+import net.wowdev.recruitment.agent.entity.JobOffer;
 
 public record JobOfferRequest(
     @NotBlank String jobName,

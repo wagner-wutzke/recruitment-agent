@@ -5,6 +5,8 @@ const detailsEmpty = document.querySelector("#details-empty");
 const offerDetails = document.querySelector("#offer-details");
 const editButton = document.querySelector("#edit-offer");
 const modalElement = document.querySelector("#offer-modal");
+const resumeModalElement = document.querySelector("#resume-modal");
+const resumeForm = document.querySelector("#resume-form");
 const form = document.querySelector("#offer-form");
 const fields = [
   "jobName",
@@ -18,7 +20,8 @@ const fields = [
   "niceToHave",
   "compensation",
 ];
-const requiredFields = ["jobName", "jobDescription", "requiredQualifications", "location", "allocation"];
+const requiredFields = ["jobName", "jobDescription", "requiredQualifications", "location",
+  "allocation"];
 const fieldElements = Object.fromEntries(
     fields.map((name) => [name, form.elements.namedItem(name)]));
 const fieldErrors = {
@@ -35,6 +38,7 @@ let editingOfferId = null;
 let originalValues = null;
 let saveAttempted = false;
 let modalInstance;
+let resumeModalInstance;
 
 function setText(selector, value) {
   document.querySelector(selector).textContent = value ?? "";
@@ -197,6 +201,33 @@ function fallbackModal() {
   };
 }
 
+function fallbackResumeModal() {
+  return {
+    show() {
+      resumeModalElement.classList.add("show");
+      resumeModalElement.style.display = "block";
+      resumeModalElement.removeAttribute("aria-hidden");
+    },
+    hide() {
+      resumeModalElement.classList.remove("show");
+      resumeModalElement.style.display = "none";
+      resumeModalElement.setAttribute("aria-hidden", "true");
+    },
+  };
+}
+
+function openResumeForm() {
+  resumeForm.reset();
+  resumeForm.querySelectorAll(".is-invalid").forEach((field) => {
+    field.classList.remove("is-invalid");
+    field.removeAttribute("aria-invalid");
+  });
+  document.querySelector("#resume-upload-error").classList.add("d-none");
+  resumeModalInstance ??= window.bootstrap?.Modal.getOrCreateInstance(resumeModalElement)
+      ?? fallbackResumeModal();
+  resumeModalInstance.show();
+}
+
 function requestClose() {
   if (!isDirty()) {
     modalInstance.hide();
@@ -211,6 +242,54 @@ function hideDiscardDialog() {
 }
 
 document.querySelector("#new-offer").addEventListener("click", () => openForm());
+document.querySelector("#upload-resume").addEventListener("click", openResumeForm);
+document.querySelector("#cancel-resume").addEventListener("click",
+    () => resumeModalInstance?.hide());
+document.querySelector("#resume-modal-close").addEventListener("click",
+    () => resumeModalInstance?.hide());
+resumeForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const required = [
+    resumeForm.elements.namedItem("candidateName"),
+    resumeForm.elements.namedItem("candidateEmail"),
+    resumeForm.elements.namedItem("file"),
+  ];
+  const valid = required.map((field) => {
+    const fieldIsValid = field.type === "file" ? field.files.length > 0 : field.value.trim() !== "";
+    field.classList.toggle("is-invalid", !fieldIsValid);
+    if (fieldIsValid) {
+      field.removeAttribute("aria-invalid");
+    } else {
+      field.setAttribute("aria-invalid", "true");
+    }
+    return fieldIsValid;
+  }).every(Boolean);
+  if (!valid) {
+    return;
+  }
+
+  const errorMessage = document.querySelector("#resume-upload-error");
+  errorMessage.classList.add("d-none");
+  try {
+    const formData = new FormData();
+    formData.append("candidateName", required[0].value.trim());
+    formData.append("candidateEmail", required[1].value.trim());
+    formData.append("file", required[2].files[0]);
+    const response = await fetch("/api/resumes", {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) {
+      const failure = await response.json().catch(() => ({}));
+      throw new Error(failure.message || "Resume could not be saved. Please try again.");
+    }
+    resumeModalInstance.hide();
+    resumeForm.reset();
+  } catch (error) {
+    errorMessage.textContent = error.message || "Resume could not be saved. Please try again.";
+    errorMessage.classList.remove("d-none");
+  }
+});
 editButton.addEventListener("click", () => {
   const offer = offers.find((item) => item.id === selectedOfferId);
   if (offer) {

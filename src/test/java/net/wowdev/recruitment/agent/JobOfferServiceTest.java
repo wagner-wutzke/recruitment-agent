@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import net.wowdev.recruitment.agent.document.JobOffer;
+import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.repository.JobOfferRepository;
 import net.wowdev.recruitment.agent.service.JobOfferService;
 import org.junit.jupiter.api.Test;

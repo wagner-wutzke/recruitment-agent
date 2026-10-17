@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
 import java.util.List;
-import net.wowdev.recruitment.agent.document.JobOffer;
+import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.service.JobOfferService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

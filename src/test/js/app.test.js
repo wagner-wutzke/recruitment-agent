@@ -201,6 +201,104 @@ test("opens a blank required form with the specified allocation options and no e
   dom.window.close();
 });
 
+test("opens and cancels the Resume Data modal without submitting a resume", async () => {
+  const requests = [];
+  const dom = await loadPage(async (url, options) => {
+    requests.push({ url, options });
+    return response([]);
+  });
+  const { document } = dom.window;
+  const uploadButton = document.querySelector("#upload-resume");
+  const modal = document.querySelector("#resume-modal");
+
+  assert.equal(uploadButton.previousElementSibling.classList.contains("offer-panel"), true);
+  uploadButton.click();
+  assert.equal(modal.classList.contains("show"), true);
+  assert.equal(document.querySelector("#resume-modal-title").textContent, "Resume Data");
+  assert.equal(document.querySelector("#resume-candidate-name").required, true);
+  assert.equal(document.querySelector("#resume-candidate-email").required, true);
+  assert.equal(document.querySelector("#resume-file").required, true);
+  assert.equal(document.querySelector("#cancel-resume").textContent, "Cancel");
+  assert.equal(document.querySelector("#save-resume").textContent, "Save");
+  document.querySelector("#cancel-resume").click();
+
+  assert.equal(modal.classList.contains("show"), false);
+  assert.equal(requests.filter(({ url }) => url === "/api/resumes").length, 0);
+  dom.window.close();
+});
+
+test("submits a resume as multipart data and closes after success", async () => {
+  let uploadRequest;
+  const dom = await loadPage(async (url, options) => {
+    if (!options) return response([]);
+    uploadRequest = { url, options };
+    return response({ candidateName: "Ada Lovelace" });
+  });
+  const { document, File } = dom.window;
+  document.querySelector("#upload-resume").click();
+  document.querySelector("#resume-candidate-name").value = "Ada Lovelace";
+  document.querySelector("#resume-candidate-email").value = "ada@example.com";
+  const file = new File(["%PDF-sample"], "resume.pdf", { type: "application/pdf" });
+  Object.defineProperty(document.querySelector("#resume-file"), "files", { value: [file] });
+
+  document.querySelector("#resume-form").dispatchEvent(
+    new dom.window.Event("submit", { bubbles: true, cancelable: true }),
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(uploadRequest.url, "/api/resumes");
+  assert.equal(uploadRequest.options.method, "POST");
+  assert.equal(uploadRequest.options.headers, undefined);
+  assert.equal(uploadRequest.options.body.get("candidateName"), "Ada Lovelace");
+  assert.equal(uploadRequest.options.body.get("candidateEmail"), "ada@example.com");
+  assert.equal(uploadRequest.options.body.get("file").name, "resume.pdf");
+  assert.equal(document.querySelector("#resume-modal").classList.contains("show"), false);
+  dom.window.close();
+});
+
+test("keeps the resume modal open with a visible server error after failure", async () => {
+  const dom = await loadPage(async (url, options) => {
+    if (!options) return response([]);
+    return response({ message: "Resume could not be saved." }, false);
+  });
+  const { document, File } = dom.window;
+  document.querySelector("#upload-resume").click();
+  document.querySelector("#resume-candidate-name").value = "Ada Lovelace";
+  document.querySelector("#resume-candidate-email").value = "ada@example.com";
+  Object.defineProperty(document.querySelector("#resume-file"), "files", {
+    value: [new File(["%PDF-sample"], "resume.pdf", { type: "application/pdf" })],
+  });
+
+  document.querySelector("#resume-form").dispatchEvent(
+    new dom.window.Event("submit", { bubbles: true, cancelable: true }),
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(document.querySelector("#resume-modal").classList.contains("show"), true);
+  assert.equal(document.querySelector("#resume-upload-error").textContent, "Resume could not be saved.");
+  assert.equal(document.querySelector("#resume-upload-error").classList.contains("d-none"), false);
+  dom.window.close();
+});
+
+test("blocks incomplete resume form submissions", async () => {
+  const requests = [];
+  const dom = await loadPage(async (url, options) => {
+    requests.push({ url, options });
+    return response([]);
+  });
+  const { document } = dom.window;
+  document.querySelector("#upload-resume").click();
+  document.querySelector("#resume-form").dispatchEvent(
+    new dom.window.Event("submit", { bubbles: true, cancelable: true }),
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(document.querySelectorAll("#resume-form .is-invalid").length, 3);
+  assert.equal(requests.some(({ url }) => url === "/api/resumes"), false);
+  assert.equal(document.querySelector("#resume-modal").classList.contains("show"), true);
+  dom.window.close();
+});
+
 test("cancel closes a pristine form and asks before discarding changed values", async () => {
   const dom = await loadPage(async () => response([]));
   const { document } = dom.window;

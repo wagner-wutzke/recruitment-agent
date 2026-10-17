@@ -31,6 +31,7 @@
             <p id="list-status" class="state-message" role="status">Loading job offers…</p>
             <ul id="offer-list" class="offer-list list-unstyled mb-0" aria-label="Job offers"></ul>
           </div>
+          <button id="upload-resume" class="btn btn-outline-primary mt-3" type="button">Upload Resume</button>
         </section>
         <section aria-labelledby="details-heading">
           <div class="panel details-panel h-100">
@@ -84,6 +85,26 @@
               <div class="mb-3"><label class="form-label" for="job-allocation">Allocation</label><select class="form-select" id="job-allocation" name="allocation" required aria-describedby="job-allocation-error"><option value="">Choose allocation</option><option>Remote</option><option>Hybrid</option><option>On-site</option></select><div class="invalid-feedback" id="job-allocation-error">This field is required.</div></div>
             </div>
             <div class="modal-footer"><button type="button" class="btn btn-light" id="cancel-offer">Cancel</button><button type="submit" class="btn btn-primary" id="save-offer">Save</button></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="resume-modal" tabindex="-1" aria-labelledby="resume-modal-title" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content offer-modal-content">
+          <form id="resume-form">
+            <div class="modal-header">
+              <div><p class="eyebrow">CANDIDATE PROFILE</p><h2 class="modal-title" id="resume-modal-title">Resume Data</h2></div>
+              <button type="button" class="btn-close" id="resume-modal-close" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3"><label class="form-label" for="resume-candidate-name">Candidate Name</label><input class="form-control" id="resume-candidate-name" name="candidateName" required></div>
+              <div class="mb-3"><label class="form-label" for="resume-candidate-email">Candidate Email</label><input class="form-control" id="resume-candidate-email" name="candidateEmail" type="email" required></div>
+              <div class="mb-3"><label class="form-label" for="resume-file">PDF file</label><input class="form-control" id="resume-file" name="file" type="file" accept=".pdf,application/pdf" required></div>
+              <p id="resume-upload-error" class="alert alert-danger d-none" role="alert"></p>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-light" id="cancel-resume">Cancel</button><button type="submit" class="btn btn-primary" id="save-resume">Save</button></div>
           </form>
         </div>
       </div>

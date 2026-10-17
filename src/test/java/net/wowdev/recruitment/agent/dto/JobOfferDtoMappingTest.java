@@ -2,7 +2,7 @@ package net.wowdev.recruitment.agent.dto;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import net.wowdev.recruitment.agent.document.JobOffer;
+import net.wowdev.recruitment.agent.entity.JobOffer;
 import org.junit.jupiter.api.Test;
 
 class JobOfferDtoMappingTest {

@@ -3,7 +3,7 @@ package net.wowdev.recruitment.agent.controller;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.NoSuchElementException;
-import net.wowdev.recruitment.agent.document.JobOffer;
+import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.dto.ApiErrorResponse;
 import net.wowdev.recruitment.agent.dto.JobOfferRequest;
 import net.wowdev.recruitment.agent.dto.JobOfferResponse;

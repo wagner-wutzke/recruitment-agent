@@ -1,4 +1,4 @@
-package net.wowdev.recruitment.agent.document;
+package net.wowdev.recruitment.agent.entity;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;

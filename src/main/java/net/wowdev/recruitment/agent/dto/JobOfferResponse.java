@@ -1,6 +1,6 @@
 package net.wowdev.recruitment.agent.dto;
 
-import net.wowdev.recruitment.agent.document.JobOffer;
+import net.wowdev.recruitment.agent.entity.JobOffer;
 
 public record JobOfferResponse(
     String id,

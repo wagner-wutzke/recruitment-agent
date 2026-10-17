@@ -3,6 +3,7 @@ package net.wowdev.recruitment.agent.document;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import net.wowdev.recruitment.agent.entity.JobOffer;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
