@@ -4,19 +4,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.UUID;
-import net.wowdev.recruitment.agent.repository.ResumeRepository;
 import net.wowdev.recruitment.agent.entity.ResumeDocument;
+import net.wowdev.recruitment.agent.repository.ResumeRepository;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -30,10 +29,10 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -42,9 +41,10 @@ import org.springframework.test.web.servlet.MvcResult;
 
 @SpringBootTest(
     properties = {
-      "spring.mongodb.uri=${MONGODB_URI:mongodb://localhost:27017/resume_upload_integration_test}",
+      "spring.mongodb.uri=${MONGODB_URI:mongodb://${MONGODB_USERNAME:admin}:${MONGODB_PASSWORD:secret_password}@localhost:27017/resume_upload_integration_test?authSource=${MONGODB_AUTHENTICATION_DATABASE:admin}}",
       "spring.ai.vectorstore.chroma.collection-name=resume-upload-integration-test",
-      "spring.ai.vectorstore.chroma.initialize-schema=true"
+      "spring.ai.vectorstore.chroma.initialize-schema=true",
+      "spring.ai.openai.api-key=test-only-not-a-real-openai-key"
     })
 @AutoConfigureMockMvc
 class ResumeUploadIntegrationTest {
@@ -61,19 +61,45 @@ class ResumeUploadIntegrationTest {
     registry.add("resume.storage.directory", () -> storageDirectory.resolve("resumes").toString());
   }
 
+  private static String jsonValue(MvcResult result, String path) throws Exception {
+    return com.jayway.jsonpath.JsonPath.read(result.getResponse().getContentAsString(), path);
+  }
+
+  private static byte[] pdfWithText(String text) throws Exception {
+    try (PDDocument document = new PDDocument();
+        ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+      PDPage page = new PDPage();
+      document.addPage(page);
+      try (PDPageContentStream content = new PDPageContentStream(document, page)) {
+        content.beginText();
+        content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+        content.newLineAtOffset(50, 700);
+        content.showText(text);
+        content.endText();
+      }
+      document.save(output);
+      return output.toByteArray();
+    }
+  }
+
+  private static String extractText(byte[] pdf) throws Exception {
+    try (PDDocument document = org.apache.pdfbox.Loader.loadPDF(pdf)) {
+      return new org.apache.pdfbox.text.PDFTextStripper().getText(document).trim();
+    }
+  }
+
   @AfterEach
   void cleanUpCandidateData() {
     vectorStore.delete(
         new Filter.Expression(
-            Filter.ExpressionType.EQ,
-            new Filter.Key("candidateEmail"),
-            new Filter.Value(EMAIL)));
+            Filter.ExpressionType.EQ, new Filter.Key("candidateEmail"), new Filter.Value(EMAIL)));
     resumeRepository.deleteById(EMAIL);
   }
 
   @Test
   void savesAndReplacesResumeAcrossHttpDatabaseFilesAndChroma() throws Exception {
-    MvcResult created = upload("Ada Integration", pdfWithText("First resume content for Java systems"));
+    MvcResult created =
+        upload("Ada Integration", pdfWithText("First resume content for Java systems"));
     assertEquals(201, created.getResponse().getStatus());
     String firstDocumentId = jsonValue(created, "$.documentId");
     assertEquals("Ada_Integration.pdf", jsonValue(created, "$.fileName"));
@@ -84,7 +110,8 @@ class ResumeUploadIntegrationTest {
     assertTrue(Files.exists(storageDirectory.resolve("resumes/Ada_Integration.pdf")));
     assertCandidateDocumentExists(firstDocumentId);
 
-    MvcResult updated = upload("Ada Integration", pdfWithText("Replacement resume content for Kotlin systems"));
+    MvcResult updated =
+        upload("Ada Integration", pdfWithText("Replacement resume content for Kotlin systems"));
     assertEquals(200, updated.getResponse().getStatus());
     String replacementDocumentId = jsonValue(updated, "$.documentId");
     assertNotEquals(firstDocumentId, replacementDocumentId);
@@ -99,7 +126,9 @@ class ResumeUploadIntegrationTest {
             .andExpect(content().contentType(MediaType.APPLICATION_PDF))
             .andExpect(
                 org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
-                    .string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString("Ada_Integration.pdf")))
+                    .string(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        org.hamcrest.Matchers.containsString("Ada_Integration.pdf")))
             .andReturn()
             .getResponse()
             .getContentAsByteArray();
@@ -111,7 +140,9 @@ class ResumeUploadIntegrationTest {
     mockMvc
         .perform(
             multipart("/api/resumes")
-                .file(new MockMultipartFile("file", "bad.pdf", "application/pdf", "not a PDF".getBytes()))
+                .file(
+                    new MockMultipartFile(
+                        "file", "bad.pdf", "application/pdf", "not a PDF".getBytes()))
                 .param("candidateName", "Unreadable Candidate")
                 .param("candidateEmail", EMAIL))
         .andExpect(status().isBadRequest())
@@ -159,31 +190,5 @@ class ResumeUploadIntegrationTest {
                     new Filter.Key("candidateEmail"),
                     new Filter.Value(EMAIL)))
             .build());
-  }
-
-  private static String jsonValue(MvcResult result, String path) throws Exception {
-    return com.jayway.jsonpath.JsonPath.read(result.getResponse().getContentAsString(), path);
-  }
-
-  private static byte[] pdfWithText(String text) throws Exception {
-    try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-      PDPage page = new PDPage();
-      document.addPage(page);
-      try (PDPageContentStream content = new PDPageContentStream(document, page)) {
-        content.beginText();
-        content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
-        content.newLineAtOffset(50, 700);
-        content.showText(text);
-        content.endText();
-      }
-      document.save(output);
-      return output.toByteArray();
-    }
-  }
-
-  private static String extractText(byte[] pdf) throws Exception {
-    try (PDDocument document = org.apache.pdfbox.Loader.loadPDF(pdf)) {
-      return new org.apache.pdfbox.text.PDFTextStripper().getText(document).trim();
-    }
   }
 }

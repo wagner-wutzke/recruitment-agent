@@ -49,7 +49,8 @@ class ResumeFileStorageTest {
 
     storage.store("Ada Lovelace", "new".getBytes());
 
-    assertArrayEquals("new".getBytes(), Files.readAllBytes(tempDirectory.resolve("Ada_Lovelace.pdf")));
+    assertArrayEquals(
+        "new".getBytes(), Files.readAllBytes(tempDirectory.resolve("Ada_Lovelace.pdf")));
   }
 
   @Test

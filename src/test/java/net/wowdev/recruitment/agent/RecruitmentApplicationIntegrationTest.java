@@ -12,19 +12,25 @@ import java.util.List;
 import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.repository.JobOfferRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = "spring.ai.openai.api-key=test-only-not-a-real-openai-key")
 class RecruitmentApplicationIntegrationTest {
 
   private final HttpClient httpClient = HttpClient.newHttpClient();
   @LocalServerPort private int port;
+  @Autowired private OpenAiChatModel openAiChatModel;
   @MockitoBean private JobOfferRepository jobOfferRepository;
 
   @Test
   void startsApplicationAndServesSpaAndPopulatedApiResponse() throws Exception {
+    assertEquals("gpt-6-luna", openAiChatModel.getDefaultOptions().getModel());
     when(jobOfferRepository.findAll())
         .thenReturn(
             List.of(

@@ -1,6 +1,7 @@
 package net.wowdev.recruitment.agent.dto;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import net.wowdev.recruitment.agent.entity.JobOffer;
 import org.junit.jupiter.api.Test;
@@ -41,15 +42,23 @@ class JobOfferDtoMappingTest {
   void allowsEnhancementFieldsToBeAbsent() {
     JobOfferRequest request =
         new JobOfferRequest(
-            "Backend Engineer", "Build services", "Java experience", "Dublin", "Remote",
-            null, null, null, null, null);
+            "Backend Engineer",
+            "Build services",
+            "Java experience",
+            "Dublin",
+            "Remote",
+            null,
+            null,
+            null,
+            null,
+            null);
 
     JobOffer document = request.toDocument("offer-1");
 
-    assertEquals(null, document.responsibilities());
-    assertEquals(null, document.benefits());
-    assertEquals(null, document.companyName());
-    assertEquals(null, document.niceToHave());
-    assertEquals(null, document.compensation());
+    assertNull(document.responsibilities());
+    assertNull(document.benefits());
+    assertNull(document.companyName());
+    assertNull(document.niceToHave());
+    assertNull(document.compensation());
   }
 }

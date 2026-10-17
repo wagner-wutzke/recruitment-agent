@@ -2,6 +2,7 @@ package net.wowdev.recruitment.agent.document;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import net.wowdev.recruitment.agent.entity.JobOffer;
 import org.bson.Document;
@@ -72,10 +73,10 @@ class JobOfferMappingTest {
 
     JobOffer jobOffer = converter.read(JobOffer.class, document);
 
-    assertEquals(null, jobOffer.responsibilities());
-    assertEquals(null, jobOffer.benefits());
-    assertEquals(null, jobOffer.companyName());
-    assertEquals(null, jobOffer.niceToHave());
-    assertEquals(null, jobOffer.compensation());
+    assertNull(jobOffer.responsibilities());
+    assertNull(jobOffer.benefits());
+    assertNull(jobOffer.companyName());
+    assertNull(jobOffer.niceToHave());
+    assertNull(jobOffer.compensation());
   }
 }

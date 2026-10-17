@@ -3,8 +3,8 @@ package net.wowdev.recruitment.agent.service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +17,13 @@ public class ResumeFileStorage {
       @Value("${resume.storage.directory:${user.home}/data/recruitment-agent/resume}")
           Path directory) {
     this.directory = directory.toAbsolutePath().normalize();
+  }
+
+  private static void restore(Path target, Path backup) throws IOException {
+    Files.deleteIfExists(target);
+    if (backup != null && Files.exists(backup)) {
+      Files.move(backup, target, StandardCopyOption.REPLACE_EXISTING);
+    }
   }
 
   public String store(String candidateName, byte[] pdf) throws IOException {
@@ -67,13 +74,6 @@ public class ResumeFileStorage {
     } catch (IOException exception) {
       restore(target, backup);
       throw exception;
-    }
-  }
-
-  private static void restore(Path target, Path backup) throws IOException {
-    Files.deleteIfExists(target);
-    if (backup != null && Files.exists(backup)) {
-      Files.move(backup, target, StandardCopyOption.REPLACE_EXISTING);
     }
   }
 

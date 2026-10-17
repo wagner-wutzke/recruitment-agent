@@ -30,11 +30,10 @@ html {
 }
 
 body {
-  background:
-    radial-gradient(ellipse at 91% 8%, rgb(237 200 75 / 20%), transparent 25rem),
-    radial-gradient(ellipse at 3% 28%, rgb(105 174 202 / 16%), transparent 27rem),
-    repeating-linear-gradient(0deg, rgb(41 61 28 / 1.4%) 0 1px, transparent 1px 5px),
-    var(--paper);
+  background: radial-gradient(ellipse at 91% 8%, rgb(237 200 75 / 20%), transparent 25rem),
+  radial-gradient(ellipse at 3% 28%, rgb(105 174 202 / 16%), transparent 27rem),
+  repeating-linear-gradient(0deg, rgb(41 61 28 / 1.4%) 0 1px, transparent 1px 5px),
+  var(--paper);
   color: var(--ink);
   font-family: var(--body-font);
   min-height: 100vh;
@@ -48,9 +47,8 @@ textarea {
 }
 
 .topbar {
-  background:
-    linear-gradient(110deg, rgb(255 255 255 / 3%), transparent 42%),
-    var(--forest);
+  background: linear-gradient(110deg, rgb(255 255 255 / 3%), transparent 42%),
+  var(--forest);
   border-bottom: 3px solid var(--ochre);
   color: var(--surface);
   position: relative;

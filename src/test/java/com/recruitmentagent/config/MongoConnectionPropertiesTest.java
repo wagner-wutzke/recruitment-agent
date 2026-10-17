@@ -15,7 +15,8 @@ import org.springframework.core.env.PropertySourcesPropertyResolver;
 
 class MongoConnectionPropertiesTest {
 
-  private static final String DEFAULT_MONGODB_URI = "mongodb://localhost:27017/recruitment_agent_test";
+  private static final String DEFAULT_MONGODB_URI =
+      "mongodb://localhost:27017/recruitment_agent_test";
 
   @Test
   void usesLocalDatabaseWhenMongoUriIsNotConfigured() throws IOException {
