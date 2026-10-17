@@ -54,11 +54,18 @@
                 <section class="detail-item"><h3>Allocation</h3><p id="detail-allocation"></p></section>
               </div>
             </article>
+            <section id="search-results-panel" class="search-results d-none" aria-live="polite" aria-labelledby="search-results-heading">
+              <p class="eyebrow">CANDIDATE MATCHING</p>
+              <h2 id="search-results-heading">Search Results</h2>
+              <p id="search-results-status" class="state-message" role="status"></p>
+              <ul id="search-results-list" class="search-results-list list-unstyled mb-0"></ul>
+            </section>
           </div>
         </section>
       </div>
       <div class="panel action-panel d-flex gap-2 justify-content-end mt-3">
         <button id="edit-offer" class="btn btn-outline-primary d-none" type="button">Edit</button>
+        <button id="find-candidates" class="btn btn-outline-primary" type="button" disabled>Find Candidates</button>
         <button id="new-offer" class="btn btn-primary" type="button">New Job Offer</button>
       </div>
     </main>

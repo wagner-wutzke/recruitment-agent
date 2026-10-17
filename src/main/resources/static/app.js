@@ -4,6 +4,10 @@ const offerCount = document.querySelector("#offer-count");
 const detailsEmpty = document.querySelector("#details-empty");
 const offerDetails = document.querySelector("#offer-details");
 const editButton = document.querySelector("#edit-offer");
+const findCandidatesButton = document.querySelector("#find-candidates");
+const searchResultsPanel = document.querySelector("#search-results-panel");
+const searchResultsStatus = document.querySelector("#search-results-status");
+const searchResultsList = document.querySelector("#search-results-list");
 const modalElement = document.querySelector("#offer-modal");
 const resumeModalElement = document.querySelector("#resume-modal");
 const resumeForm = document.querySelector("#resume-form");
@@ -70,6 +74,11 @@ function isDirty() {
 
 function selectOffer(offer) {
   selectedOfferId = offer.id;
+  findCandidatesButton.disabled = false;
+  searchResultsPanel.classList.add("d-none");
+  searchResultsList.replaceChildren();
+  searchResultsStatus.textContent = "";
+  searchResultsStatus.classList.remove("error");
   offerList.querySelectorAll("button").forEach(
       (item) => item.setAttribute("aria-current", "false"));
   const selectedButton = [...offerList.querySelectorAll("button")].find(
@@ -119,8 +128,75 @@ function renderOffers() {
   } else {
     selectedOfferId = null;
     editButton.classList.add("d-none");
+    findCandidatesButton.disabled = true;
     offerDetails.classList.add("d-none");
+    searchResultsPanel.classList.add("d-none");
     detailsEmpty.classList.remove("d-none");
+  }
+}
+
+function displaySearchResults(candidates) {
+  searchResultsList.replaceChildren();
+  if (candidates.length === 0) {
+    searchResultsStatus.textContent = "No matching candidates were found.";
+    return;
+  }
+
+  searchResultsStatus.textContent = `Found ${candidates.length} matching candidate${candidates.length === 1 ? "" : "s"}.`;
+  candidates.forEach((candidate) => {
+    const item = document.createElement("li");
+    item.className = "candidate-match";
+    const name = document.createElement("strong");
+    name.textContent = candidate.candidateName ?? "Unnamed candidate";
+    const email = document.createElement("span");
+    email.textContent = candidate.candidateEmail ?? "";
+    item.append(name, email);
+    searchResultsList.append(item);
+  });
+}
+
+async function findCandidates() {
+  if (!selectedOfferId) {
+    return;
+  }
+
+  const searchedOfferId = selectedOfferId;
+  findCandidatesButton.disabled = true;
+  detailsEmpty.classList.add("d-none");
+  offerDetails.classList.add("d-none");
+  searchResultsPanel.classList.remove("d-none");
+  searchResultsList.replaceChildren();
+  searchResultsStatus.textContent = "Searching the indexed resumes…";
+  searchResultsStatus.classList.remove("error");
+
+  try {
+    const response = await fetch("/api/candidate-matches", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({jobOfferId: searchedOfferId}),
+    });
+    if (!response.ok) {
+      throw new Error("Candidate matching could not be completed. Please try again.");
+    }
+    const candidates = await response.json();
+    if (!Array.isArray(candidates)) {
+      throw new Error("Candidate matching could not be completed. Please try again.");
+    }
+    if (selectedOfferId !== searchedOfferId) {
+      return;
+    }
+    displaySearchResults(candidates);
+  } catch {
+    if (selectedOfferId !== searchedOfferId) {
+      return;
+    }
+    searchResultsList.replaceChildren();
+    searchResultsStatus.textContent = "Candidate matching could not be completed. Please try again.";
+    searchResultsStatus.classList.add("error");
+  } finally {
+    if (selectedOfferId === searchedOfferId) {
+      findCandidatesButton.disabled = false;
+    }
   }
 }
 
@@ -242,6 +318,7 @@ function hideDiscardDialog() {
 }
 
 document.querySelector("#new-offer").addEventListener("click", () => openForm());
+findCandidatesButton.addEventListener("click", findCandidates);
 document.querySelector("#upload-resume").addEventListener("click", openResumeForm);
 document.querySelector("#cancel-resume").addEventListener("click",
     () => resumeModalInstance?.hide());

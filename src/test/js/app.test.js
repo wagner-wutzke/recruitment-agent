@@ -71,6 +71,93 @@ test("loads offers, selects details, and shows management controls appropriately
   assert.equal(document.querySelector("#edit-offer").classList.contains("d-none"), false);
   assert.equal(document.querySelector("#edit-offer").parentElement, document.querySelector(".action-panel"));
   assert.equal(document.querySelector("#new-offer").parentElement, document.querySelector(".action-panel"));
+  assert.equal(document.querySelector("#find-candidates").parentElement, document.querySelector(".action-panel"));
+  dom.window.close();
+});
+
+test("searches the selected job offer and displays matching candidates safely", async () => {
+  const requests = [];
+  const matchingCandidates = [
+    { candidateName: "<img src=x onerror=alert(1)>", candidateEmail: "ada@example.com" },
+  ];
+  const dom = await loadPage(async (url, options) => {
+    if (!options) return response([offer]);
+    requests.push({ url, options });
+    return response(matchingCandidates);
+  });
+  const { document } = dom.window;
+  const button = document.querySelector("#find-candidates");
+
+  assert.equal(button.disabled, true);
+  button.click();
+  assert.equal(requests.length, 0);
+  document.querySelector(".offer-button").click();
+  assert.equal(button.disabled, false);
+  button.click();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(requests[0].url, "/api/candidate-matches");
+  assert.equal(requests[0].options.method, "POST");
+  assert.deepEqual(JSON.parse(requests[0].options.body), { jobOfferId: offer.id });
+  assert.equal(document.querySelector("#offer-details").classList.contains("d-none"), true);
+  assert.equal(document.querySelector("#search-results-panel").classList.contains("d-none"), false);
+  assert.equal(document.querySelector("#search-results-heading").textContent, "Search Results");
+  assert.equal(document.querySelector("#search-results-status").textContent, "Found 1 matching candidate.");
+  assert.equal(document.querySelector("#search-results-list img"), null);
+  assert.equal(document.querySelector("#search-results-list").textContent.includes("<img"), true);
+  assert.equal(button.disabled, false);
+  dom.window.close();
+});
+
+test("shows a searching state while the candidate request is pending", async () => {
+  let completeSearch;
+  const dom = await loadPage(async (url, options) => {
+    if (!options) return response([offer]);
+    return new Promise((resolve) => { completeSearch = resolve; });
+  });
+  const { document } = dom.window;
+  document.querySelector(".offer-button").click();
+  const button = document.querySelector("#find-candidates");
+  button.click();
+
+  assert.equal(button.disabled, true);
+  assert.equal(document.querySelector("#search-results-status").textContent, "Searching the indexed resumes…");
+  completeSearch(response([]));
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(button.disabled, false);
+  dom.window.close();
+});
+
+test("communicates when the vector search returns no candidates", async () => {
+  const dom = await loadPage(async (url, options) => {
+    if (!options) return response([offer]);
+    return response([]);
+  });
+  const { document } = dom.window;
+  document.querySelector(".offer-button").click();
+  document.querySelector("#find-candidates").click();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(document.querySelector("#search-results-panel").classList.contains("d-none"), false);
+  assert.equal(document.querySelector("#search-results-status").textContent, "No matching candidates were found.");
+  assert.equal(document.querySelector("#search-results-list").children.length, 0);
+  dom.window.close();
+});
+
+test("shows a visible search error instead of successful results when the API fails", async () => {
+  const dom = await loadPage(async (url, options) => {
+    if (!options) return response([offer]);
+    return response({ code: "CANDIDATE_MATCHING_FAILED" }, false);
+  });
+  const { document } = dom.window;
+  document.querySelector(".offer-button").click();
+  document.querySelector("#find-candidates").click();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(document.querySelector("#search-results-panel").classList.contains("d-none"), false);
+  assert.equal(document.querySelector("#search-results-status").classList.contains("error"), true);
+  assert.equal(document.querySelector("#search-results-status").textContent, "Candidate matching could not be completed. Please try again.");
+  assert.equal(document.querySelector("#search-results-list").children.length, 0);
   dom.window.close();
 });
 
