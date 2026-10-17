@@ -2,11 +2,22 @@
 
 This repository uses Spec-Driven Development (SDD).
 
+## Technical Stack
+
+- Webapp with vanilla JavaScript, CSS, Bootstrap and pure HTML.
+- Spring Boot, Spring Boot AI, Spring Boot WEB MVC
+- Java 21
+- Mongo DB
+- Spring Data JPA
+- Mockito
+
+## Agents
+
 There are three primary agents:
 
 1. Spec Architect → responsible for specifications
 2. Software Engineer → responsible for implementation
-3. Review Agent → responsible for implementation's review
+3. Review Agent → validates the specification, code, and tests
 
 Each agent has clear responsibilities and must not exceed its role.
 
@@ -24,7 +35,7 @@ Specifications are the source of truth for development.
 - Define acceptance criteria
 - Define functional and non-functional requirements
 - Update specifications when behavior changes
-- Create or update `[FEATURE]/03-tasks.md` when necessary
+- Create or update `03-tasks.md` when necessary
 
 ### Expected Spec Structure
 
@@ -146,18 +157,28 @@ A feature is considered complete when:
   not ave its
   respective unit or functional test.
 
-### The Andrej Karpathy "CLAUDE.md" prompt
+## Frontend guidelines
+
+- Typography: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like
+  Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics.
+- Color & Theme: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors
+  with sharp accents outperform timid, evenly-distributed palettes. Draw from IDE themes and
+  cultural aesthetics for inspiration.
+- Motion: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML.
+  Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated
+  page load with staggered reveals (animation-delay) creates more delight than scattered
+  micro-interactions.
+- Backgrounds: Create atmosphere and depth rather than defaulting to solid colors. Layer CSS
+  gradients, use geometric patterns, or add contextual effects that match the overall aesthetic.
+  Avoid generic AI-generated aesthetics:
+- Overused font families (Inter, Roboto, Arial, system fonts)
+- Clichéd color schemes (particularly purple gradients on white backgrounds)
+- Predictable layouts and component patterns
+- Cookie-cutter design that lacks context-specific character
+
+## The Andrej Karpathy prompt
 
 - Always maintain a clean working directory.
 - Write modular, self-contained functions.
 - Do not explain code unless explicitly asked.
 - Prioritize condition-before-command formatting to reduce token consumption.
-
-## Technical Stack
-
-- Webapp with vanilla JavaScript, CSS, Bootstrap and pure HTML.
-- Spring Boot, Spring Boot AI, Spring Boot WEB MVC
-- Java 21
-- Mongo DB
-- Spring Data JPA
-- Mockito

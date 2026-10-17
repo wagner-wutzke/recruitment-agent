@@ -47,7 +47,7 @@ defined by the approved requirements:
 }
 ```
 
-Map the document to `net.wowdev.recruitment.agent.document.JobOffer` with `@Document(collection =
+Map the document to `net.wowdev.recruitment.agent.entity.JobOffer` with `@Document(collection =
 "job_offers")` and these Java fields: `String id`, `String jobName`, `String jobDescription`,
 `String requiredQualifications`, `String location`, and `String allocation`. Map MongoDB `_id` to
 `id` using Spring Data's `@Id`. Job offers are read through a `MongoRepository<JobOffer, String>`
