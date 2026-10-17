@@ -198,6 +198,9 @@ test("keeps layout dimensions responsive and contains actions in their panel", a
 
     assert.match(styles, /\.page-width\s*\{[^}]*width:\s*min\(1480px,\s*100%\)/s);
     assert.match(styles, /\.details-panel\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*1024px/s);
+    assert.match(styles, /\.offer-list\s*\{[^}]*max-height:\s*360px;[^}]*overflow-y:\s*auto/s);
+    assert.match(styles,
+        /\.details-panel\s*\{[^}]*max-height:\s*calc\(100vh\s*-\s*300px\);[^}]*overflow-y:\s*auto/s);
     assert.match(styles, /\.action-panel\s*\{[^}]*max-width:\s*1480px;[^}]*width:\s*100%/s);
     assert.match(styles,
         /\.action-panel\s*\{[^}]*align-items:\s*center;[^}]*flex-wrap:\s*nowrap;[^}]*min-height:\s*56px;[^}]*overflow-x:\s*auto/s);
@@ -352,6 +355,8 @@ test("opens a blank required form with the specified allocation options and no e
       assert.equal(document.querySelector("#company-name").required, false);
       assert.equal(document.querySelector("#nice-to-have").required, false);
       assert.equal(document.querySelector("#compensation").required, false);
+      assert.equal(document.querySelector("#compensation").tagName, "INPUT");
+      assert.equal(document.querySelector("#compensation").type, "text");
       assert.deepEqual(
           [...document.querySelectorAll("#job-allocation option")].slice(1).map(
               (option) => option.value),

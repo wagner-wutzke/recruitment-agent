@@ -271,6 +271,12 @@ h1 {
 .offer-list {
   display: grid;
   gap: 9px;
+  max-height: 415px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 8px 2px 2px;
+  scrollbar-color: var(--blue) var(--surface-tint);
+  scrollbar-width: thin;
 }
 
 .offer-button {
@@ -342,7 +348,12 @@ h1 {
 
 .details-panel {
   margin-left: auto;
-  min-height: 435px;
+  min-height: 415px;
+  max-height: calc(100vh - 350px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--blue) var(--surface-tint);
+  scrollbar-width: thin;
   width: 100%;
   max-width: 1024px;
 }
