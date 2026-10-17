@@ -1,6 +1,7 @@
 package net.wowdev.recruitment.agent.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -17,13 +18,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import net.wowdev.recruitment.agent.entity.ResumeDocument;
 import net.wowdev.recruitment.agent.repository.ResumeRepository;
-import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
@@ -31,7 +31,6 @@ import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InOrder;
-import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
 
@@ -41,6 +40,32 @@ class ResumeUploadServiceTest {
   private static final String CANDIDATE_NAME = "Ada Lovelace";
 
   @TempDir Path tempDirectory;
+
+  private static byte[] pdfWithText(String text) throws IOException {
+    try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+      PDPage page = new PDPage();
+      document.addPage(page);
+      try (PDPageContentStream content = new PDPageContentStream(document, page)) {
+        content.beginText();
+        content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+        content.newLineAtOffset(50, 700);
+        content.showText(text);
+        content.endText();
+      }
+      document.save(output);
+      return output.toByteArray();
+    }
+  }
+
+  private static String pdfText(byte[] pdf) throws IOException {
+    try (PDDocument document = Loader.loadPDF(pdf)) {
+      return new org.apache.pdfbox.text.PDFTextStripper().getText(document).trim();
+    }
+  }
+
+  private static ResumePdfIndexer indexer(VectorStore vectorStore) {
+    return new ResumePdfIndexer(vectorStore, new ResumeIndexingProperties());
+  }
 
   @Test
   void savesMetadataAndReplacesOldIndexedContent() throws IOException {
@@ -79,7 +104,7 @@ class ResumeUploadServiceTest {
         org.mockito.ArgumentCaptor.forClass(Filter.Expression.class);
     verify(vectorStore).delete(filterCaptor.capture());
     assertEquals("documentId", ((Filter.Key) filterCaptor.getValue().left()).key());
-    assertEquals(previous.getDocumentId().toString(), ((Filter.Value) filterCaptor.getValue().right()).value());
+    assertEquals(previous.getDocumentId(), ((Filter.Value) filterCaptor.getValue().right()).value());
   }
 
   @Test
@@ -156,7 +181,7 @@ class ResumeUploadServiceTest {
         new ResumeUploadService(repository, fileStorage, indexer, vectorStore)
             .upload(CANDIDATE_NAME, EMAIL, pdfWithText("Replacement resume content"));
 
-    assertEquals(false, result.created());
+    assertFalse(result.created());
     assertEquals(EMAIL, result.resume().getCandidateEmail());
   }
 
@@ -254,31 +279,5 @@ class ResumeUploadServiceTest {
             mock(VectorStore.class));
 
     assertThrows(ResumeDownloadException.class, () -> service.download(EMAIL));
-  }
-
-  private static byte[] pdfWithText(String text) throws IOException {
-    try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-      PDPage page = new PDPage();
-      document.addPage(page);
-      try (PDPageContentStream content = new PDPageContentStream(document, page)) {
-        content.beginText();
-        content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
-        content.newLineAtOffset(50, 700);
-        content.showText(text);
-        content.endText();
-      }
-      document.save(output);
-      return output.toByteArray();
-    }
-  }
-
-  private static String pdfText(byte[] pdf) throws IOException {
-    try (PDDocument document = Loader.loadPDF(pdf)) {
-      return new org.apache.pdfbox.text.PDFTextStripper().getText(document).trim();
-    }
-  }
-
-  private static ResumePdfIndexer indexer(VectorStore vectorStore) {
-    return new ResumePdfIndexer(vectorStore, new ResumeIndexingProperties());
   }
 }

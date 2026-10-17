@@ -138,11 +138,13 @@ function renderOffers() {
 function displaySearchResults(candidates) {
   searchResultsList.replaceChildren();
   if (candidates.length === 0) {
-    searchResultsStatus.textContent = "No matching candidates were found.";
+    searchResultsStatus.textContent =
+        "No matching candidates were found for the current criteria. Review or loosen the job qualifications and try again.";
     return;
   }
 
-  searchResultsStatus.textContent = `Found ${candidates.length} matching candidate${candidates.length === 1 ? "" : "s"}.`;
+  searchResultsStatus.textContent = `Found ${candidates.length} matching candidate${candidates.length
+  === 1 ? "" : "s"}.`;
   candidates.forEach((candidate) => {
     const item = document.createElement("li");
     item.className = "candidate-match";

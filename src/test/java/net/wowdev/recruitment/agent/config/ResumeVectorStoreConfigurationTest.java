@@ -1,9 +1,10 @@
 package net.wowdev.recruitment.agent.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import net.wowdev.recruitment.agent.RecruitmentAgentApplication;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest;
     classes = RecruitmentAgentApplication.class,
     properties = {
       "spring.ai.vectorstore.chroma.collection-name=resume-task-3-1-check",
-      "spring.ai.vectorstore.chroma.initialize-schema=true"
+      "spring.ai.vectorstore.chroma.initialize-schema=true",
+      "spring.ai.openai.api-key=test-only-not-a-real-openai-key"
     })
 class ResumeVectorStoreConfigurationTest {
 
@@ -58,7 +60,7 @@ class ResumeVectorStoreConfigurationTest {
                   .similarityThreshold(0)
                   .build());
 
-      assertTrue(embedding.length == 384);
+      assertEquals(384, embedding.length);
       assertTrue(
           results.stream()
               .anyMatch(

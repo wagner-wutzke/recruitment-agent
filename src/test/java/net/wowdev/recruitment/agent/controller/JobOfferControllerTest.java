@@ -53,6 +53,14 @@ class JobOfferControllerTest {
                 "Competitive salary");
     }
 
+    private static void assertEnhancementFields(JobOffer jobOffer) {
+        assertEquals("Lead platform work", jobOffer.responsibilities());
+        assertEquals("Health coverage", jobOffer.benefits());
+        assertEquals("Example Corp", jobOffer.companyName());
+        assertEquals("Kubernetes experience", jobOffer.niceToHave());
+        assertEquals("Competitive salary", jobOffer.compensation());
+    }
+
     @BeforeEach
     void setUp() {
         mockMvc = standaloneSetup(new JobOfferController(jobOfferService)).build();
@@ -156,14 +164,6 @@ class JobOfferControllerTest {
         ArgumentCaptor<JobOffer> capturedOffer = ArgumentCaptor.forClass(JobOffer.class);
         verify(jobOfferService).update(eq("offer-1"), capturedOffer.capture());
         assertEnhancementFields(capturedOffer.getValue());
-    }
-
-    private static void assertEnhancementFields(JobOffer jobOffer) {
-        assertEquals("Lead platform work", jobOffer.responsibilities());
-        assertEquals("Health coverage", jobOffer.benefits());
-        assertEquals("Example Corp", jobOffer.companyName());
-        assertEquals("Kubernetes experience", jobOffer.niceToHave());
-        assertEquals("Competitive salary", jobOffer.compensation());
     }
 
     @Test

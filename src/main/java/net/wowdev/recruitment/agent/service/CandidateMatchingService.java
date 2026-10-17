@@ -1,9 +1,12 @@
 package net.wowdev.recruitment.agent.service;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.entity.ResumeDocument;
 import net.wowdev.recruitment.agent.repository.JobOfferRepository;
@@ -21,14 +24,20 @@ public class CandidateMatchingService {
   private final JobOfferRepository jobOfferRepository;
   private final ResumeRepository resumeRepository;
   private final VectorStore vectorStore;
+  private final CandidateMatchingProperties candidateMatchingProperties;
+  private final CandidateRanker candidateRanker;
 
   public CandidateMatchingService(
       JobOfferRepository jobOfferRepository,
       ResumeRepository resumeRepository,
-      VectorStore vectorStore) {
+      VectorStore vectorStore,
+      CandidateMatchingProperties candidateMatchingProperties,
+      CandidateRanker candidateRanker) {
     this.jobOfferRepository = jobOfferRepository;
     this.resumeRepository = resumeRepository;
     this.vectorStore = vectorStore;
+    this.candidateMatchingProperties = candidateMatchingProperties;
+    this.candidateRanker = candidateRanker;
   }
 
   public List<CandidateMatch> findCandidates(String jobOfferId) {
@@ -38,38 +47,66 @@ public class CandidateMatchingService {
             .orElseThrow(() -> new NoSuchElementException("Job offer was not found."));
     String query = searchQuery(jobOffer);
     List<Document> matches =
-        vectorStore.similaritySearch(SearchRequest.builder().query(query).build());
-    return resolveCandidates(matches);
+        vectorStore.similaritySearch(
+            SearchRequest.builder()
+                .query(query)
+                .similarityThreshold(candidateMatchingProperties.getSimilarityThreshold())
+                .build());
+    return rankAndResolve(jobOffer, matches);
   }
 
   private String searchQuery(JobOffer jobOffer) {
     return String.join(
         "\n",
+        valueOrEmpty(jobOffer.jobName()),
         valueOrEmpty(jobOffer.jobDescription()),
-        valueOrEmpty(jobOffer.requiredQualifications()));
+        valueOrEmpty(jobOffer.requiredQualifications()),
+        valueOrEmpty(jobOffer.responsibilities()),
+        valueOrEmpty(jobOffer.niceToHave()));
   }
 
   private String valueOrEmpty(String value) {
     return value == null ? "" : value;
   }
 
-  private List<CandidateMatch> resolveCandidates(List<Document> matches) {
+  private List<CandidateMatch> rankAndResolve(JobOffer offer, List<Document> matches) {
     if (matches == null || matches.isEmpty()) {
       return List.of();
     }
 
-    Map<String, CandidateMatch> candidates = new LinkedHashMap<>();
+    Map<String, List<String>> evidenceByEmail = new LinkedHashMap<>();
     for (Document match : matches) {
       String candidateEmail = candidateEmail(match);
-      if (candidateEmail == null || candidates.containsKey(candidateEmail)) {
+      if (candidateEmail == null) {
         continue;
       }
-      resumeRepository
-          .findById(candidateEmail)
-          .map(this::toCandidateMatch)
-          .ifPresent(candidate -> candidates.put(candidateEmail, candidate));
+      evidenceByEmail.computeIfAbsent(candidateEmail, ignored -> new ArrayList<>()).add(match.getText());
     }
-    return List.copyOf(candidates.values());
+    if (evidenceByEmail.isEmpty()) {
+      return List.of();
+    }
+
+    Map<String, String> emailByReference = new LinkedHashMap<>();
+    Map<String, List<String>> evidenceByReference = new LinkedHashMap<>();
+    int index = 1;
+    for (Map.Entry<String, List<String>> entry : evidenceByEmail.entrySet()) {
+      String reference = "candidate-" + index++;
+      emailByReference.put(reference, entry.getKey());
+      evidenceByReference.put(reference, entry.getValue());
+    }
+
+    List<String> rankedReferences = candidateRanker.rank(offer, evidenceByReference);
+
+    Set<String> resolvedEmails = new HashSet<>();
+    List<CandidateMatch> rankedCandidates = new ArrayList<>();
+    for (String reference : rankedReferences) {
+      String email = emailByReference.get(reference);
+      if (email == null || !resolvedEmails.add(email)) {
+        continue;
+      }
+      resumeRepository.findById(email).map(this::toCandidateMatch).ifPresent(rankedCandidates::add);
+    }
+    return List.copyOf(rankedCandidates);
   }
 
   private String candidateEmail(Document document) {

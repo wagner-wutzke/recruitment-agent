@@ -12,8 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest(
-    properties =
-        "spring.mongodb.uri=${MONGODB_URI:mongodb://localhost:27017/resume_repository_test}")
+    properties = {
+      "spring.mongodb.uri=${MONGODB_URI:mongodb://${MONGODB_USERNAME:admin}:${MONGODB_PASSWORD:secret_password}@localhost:27017/resume_repository_test?authSource=${MONGODB_AUTHENTICATION_DATABASE:admin}}",
+      "spring.ai.openai.api-key=test-only-not-a-real-openai-key"
+    })
 class ResumeRepositoryTest {
 
   private static final String EMAIL = "candidate@example.test";

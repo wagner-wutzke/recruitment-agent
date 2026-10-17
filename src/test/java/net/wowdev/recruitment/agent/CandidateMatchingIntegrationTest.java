@@ -14,6 +14,7 @@ import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.entity.ResumeDocument;
 import net.wowdev.recruitment.agent.repository.JobOfferRepository;
 import net.wowdev.recruitment.agent.repository.ResumeRepository;
+import net.wowdev.recruitment.agent.service.CandidateRanker;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.document.Document;
@@ -29,7 +30,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest(
     properties = {
       "spring.ai.vectorstore.chroma.collection-name=candidate-matching-integration-test",
-      "spring.ai.vectorstore.chroma.initialize-schema=true"
+      "spring.ai.vectorstore.chroma.initialize-schema=true",
+      "spring.ai.openai.api-key=test-only-not-a-real-openai-key"
     })
 @AutoConfigureMockMvc
 class CandidateMatchingIntegrationTest {
@@ -42,6 +44,7 @@ class CandidateMatchingIntegrationTest {
   @Autowired private VectorStore vectorStore;
   @MockitoBean private JobOfferRepository jobOfferRepository;
   @MockitoBean private ResumeRepository resumeRepository;
+  @MockitoBean private CandidateRanker candidateRanker;
 
   @AfterEach
   void cleanUpVectorStore() {
@@ -85,6 +88,9 @@ class CandidateMatchingIntegrationTest {
                     "candidateEmail", CANDIDATE_EMAIL,
                     "documentId", DOCUMENT_ID,
                     "fileName", "Matching_Integration_Candidate.pdf"))));
+    when(candidateRanker.rank(
+            org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(List.of("candidate-1"));
 
     mockMvc
         .perform(

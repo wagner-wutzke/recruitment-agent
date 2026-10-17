@@ -6,16 +6,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
-import java.time.Instant;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.UUID;
 import net.wowdev.recruitment.agent.entity.ResumeDocument;
 import net.wowdev.recruitment.agent.service.InvalidResumePdfException;
@@ -27,9 +27,9 @@ import net.wowdev.recruitment.agent.service.ResumeUploadResult;
 import net.wowdev.recruitment.agent.service.ResumeUploadService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 class ResumeControllerTest {
@@ -39,6 +39,18 @@ class ResumeControllerTest {
 
   private final ResumeUploadService uploadService = mock(ResumeUploadService.class);
   private MockMvc mockMvc;
+
+  private static org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder
+      validMultipart() {
+    return multipart("/api/resumes")
+        .file(pdfFile())
+        .param("candidateName", NAME)
+        .param("candidateEmail", EMAIL);
+  }
+
+  private static MockMultipartFile pdfFile() {
+    return new MockMultipartFile("file", "resume.pdf", "application/pdf", "%PDF-sample".getBytes());
+  }
 
   @BeforeEach
   void setUp() {
@@ -223,17 +235,5 @@ class ResumeControllerTest {
         .perform(get("/api/resumes/{candidateEmail}/file", EMAIL))
         .andExpect(status().isServiceUnavailable())
         .andExpect(jsonPath("$.code").value("RESUME_DOWNLOAD_FAILED"));
-  }
-
-  private static org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder
-      validMultipart() {
-    return multipart("/api/resumes")
-        .file(pdfFile())
-        .param("candidateName", NAME)
-        .param("candidateEmail", EMAIL);
-  }
-
-  private static MockMultipartFile pdfFile() {
-    return new MockMultipartFile("file", "resume.pdf", "application/pdf", "%PDF-sample".getBytes());
   }
 }

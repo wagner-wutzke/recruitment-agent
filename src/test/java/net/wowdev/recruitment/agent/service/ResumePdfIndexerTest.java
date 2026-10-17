@@ -3,7 +3,6 @@ package net.wowdev.recruitment.agent.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -24,6 +23,30 @@ class ResumePdfIndexerTest {
 
   private final VectorStore vectorStore = org.mockito.Mockito.mock(VectorStore.class);
   private final ResumePdfIndexer indexer = new ResumePdfIndexer(vectorStore, new ResumeIndexingProperties());
+
+  private static byte[] pdfWithText(String text) throws IOException {
+    try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+      PDPage page = new PDPage();
+      document.addPage(page);
+      try (PDPageContentStream content = new PDPageContentStream(document, page)) {
+        content.beginText();
+        content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+        content.newLineAtOffset(50, 700);
+        content.showText(text);
+        content.endText();
+      }
+      document.save(output);
+      return output.toByteArray();
+    }
+  }
+
+  private static byte[] emptyPdf() throws IOException {
+    try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+      document.addPage(new PDPage());
+      document.save(output);
+      return output.toByteArray();
+    }
+  }
 
   @Test
   void extractsSplitsAndIndexesPdfWithTrackingMetadata() throws IOException {
@@ -76,29 +99,5 @@ class ResumePdfIndexerTest {
         () -> indexer.index(null, "candidate@example.com", UUID.randomUUID(), "resume.pdf"));
 
     verifyNoInteractions(vectorStore);
-  }
-
-  private static byte[] pdfWithText(String text) throws IOException {
-    try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-      PDPage page = new PDPage();
-      document.addPage(page);
-      try (PDPageContentStream content = new PDPageContentStream(document, page)) {
-        content.beginText();
-        content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
-        content.newLineAtOffset(50, 700);
-        content.showText(text);
-        content.endText();
-      }
-      document.save(output);
-      return output.toByteArray();
-    }
-  }
-
-  private static byte[] emptyPdf() throws IOException {
-    try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-      document.addPage(new PDPage());
-      document.save(output);
-      return output.toByteArray();
-    }
   }
 }
