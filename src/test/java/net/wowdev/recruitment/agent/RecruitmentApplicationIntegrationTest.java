@@ -41,7 +41,7 @@ class RecruitmentApplicationIntegrationTest {
     HttpResponse<String> offers = get("/api/job-offers");
 
     assertEquals(200, page.statusCode());
-    assertTrue(page.body().contains("Recruitment made easy"));
+    assertTrue(page.body().contains("Find the signal in every application."));
     assertTrue(page.body().contains("id=\"offer-list\""));
     assertEquals(200, spaScript.statusCode());
     assertTrue(spaScript.body().contains("loadOffers();"));

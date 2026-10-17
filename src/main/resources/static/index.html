@@ -3,9 +3,12 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#111a3b">
+    <meta name="theme-color" content="#293d1c">
     <title>Recruitment Agent</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="/styles.css" rel="stylesheet">
   </head>
   <body>
@@ -18,9 +21,19 @@
     <main class="container page-width py-5">
       <section class="intro mb-4">
         <p class="eyebrow">RECRUITER WORKSPACE</p>
-        <h1>Recruitment made easy</h1>
-        <p class="subtitle">Explore open roles and find the details that matter.</p>
+        <h1>Find the signal in every application.</h1>
+        <p class="subtitle">A considered view of open roles and the people behind the right fit.</p>
       </section>
+      <div class="panel action-panel mt-3 mb-3">
+        <div class="action-group action-group-start">
+          <button id="upload-resume" class="btn btn-primary" type="button">Upload Resume</button>
+          <button id="new-offer" class="btn btn-primary" type="button">New Job Offer</button>
+        </div>
+        <div class="action-group action-group-end">
+          <button id="edit-offer" class="btn btn-primary d-none" type="button">Edit</button>
+          <button id="find-candidates" class="btn btn-primary" type="button" disabled>Find Candidates</button>
+        </div>
+      </div>
       <div class="workspace">
         <section aria-labelledby="offers-heading">
           <div class="panel offer-panel h-100">
@@ -31,7 +44,6 @@
             <p id="list-status" class="state-message" role="status">Loading job offers…</p>
             <ul id="offer-list" class="offer-list list-unstyled mb-0" aria-label="Job offers"></ul>
           </div>
-          <button id="upload-resume" class="btn btn-outline-primary mt-3" type="button">Upload Resume</button>
         </section>
         <section aria-labelledby="details-heading">
           <div class="panel details-panel h-100">
@@ -62,11 +74,6 @@
             </section>
           </div>
         </section>
-      </div>
-      <div class="panel action-panel d-flex gap-2 justify-content-end mt-3">
-        <button id="edit-offer" class="btn btn-outline-primary d-none" type="button">Edit</button>
-        <button id="find-candidates" class="btn btn-outline-primary" type="button" disabled>Find Candidates</button>
-        <button id="new-offer" class="btn btn-primary" type="button">New Job Offer</button>
       </div>
     </main>
 

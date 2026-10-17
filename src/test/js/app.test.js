@@ -66,12 +66,16 @@ test("loads offers, selects details, and shows management controls appropriately
   assert.equal(document.querySelector(".offer-company").textContent, offer.companyName);
   assert.equal(document.querySelector("#edit-offer").classList.contains("d-none"), true);
   assert.equal(document.querySelector("#new-offer").textContent, "New Job Offer");
+  const mainChildren = [...document.querySelector("main").children];
+  assert.equal(mainChildren.indexOf(document.querySelector(".action-panel")) + 1, mainChildren.indexOf(document.querySelector(".workspace")));
   document.querySelector(".offer-button").click();
   assert.equal(document.querySelector("#detail-name").textContent, offer.jobName);
   assert.equal(document.querySelector("#edit-offer").classList.contains("d-none"), false);
-  assert.equal(document.querySelector("#edit-offer").parentElement, document.querySelector(".action-panel"));
-  assert.equal(document.querySelector("#new-offer").parentElement, document.querySelector(".action-panel"));
-  assert.equal(document.querySelector("#find-candidates").parentElement, document.querySelector(".action-panel"));
+  assert.equal(document.querySelector("#edit-offer").parentElement.classList.contains("action-group-end"), true);
+  assert.equal(document.querySelector("#find-candidates").parentElement.classList.contains("action-group-end"), true);
+  assert.equal(document.querySelector("#upload-resume").parentElement.classList.contains("action-group-start"), true);
+  assert.equal(document.querySelector("#new-offer").parentElement.classList.contains("action-group-start"), true);
+  assert.equal(document.querySelector(".action-panel").contains(document.querySelector("#upload-resume")), true);
   dom.window.close();
 });
 
@@ -169,14 +173,17 @@ test("keeps layout dimensions responsive and contains actions in their panel", a
 
     assert.match(styles, /\.page-width\s*\{[^}]*width:\s*min\(1480px,\s*100%\)/s);
     assert.match(styles, /\.details-panel\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*1024px/s);
-    assert.match(styles, /\.action-panel\s*\{[^}]*max-width:\s*1480px;[^}]*width:\s*calc\(100%\s*\+\s*1\.5rem\)/s);
+    assert.match(styles, /\.action-panel\s*\{[^}]*max-width:\s*1480px;[^}]*width:\s*100%/s);
+    assert.match(styles, /\.action-panel\s*\{[^}]*align-items:\s*center;[^}]*flex-wrap:\s*nowrap;[^}]*min-height:\s*56px;[^}]*overflow-x:\s*auto/s);
+    assert.match(styles, /\.action-group\s*\{[^}]*align-self:\s*center;[^}]*align-items:\s*center;[^}]*display:\s*flex;[^}]*flex-wrap:\s*nowrap/s);
+    assert.match(styles, /\.action-panel\s+\.btn\s*\{[^}]*align-self:\s*center;[^}]*align-items:\s*center;[^}]*flex:\s*0\s+0\s+auto;[^}]*height:\s*38px/s);
+    assert.doesNotMatch(styles, /#upload-resume\s*\{[^}]*margin-top/s);
     assert.match(styles, /@media\s*\(max-width:\s*1320px\)\s*\{[^}]*\.workspace\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
 
     const editButton = document.querySelector("#edit-offer");
     const newButton = document.querySelector("#new-offer");
-    const actionPanel = document.querySelector(".action-panel");
-    assert.equal(editButton.parentElement, actionPanel);
-    assert.equal(newButton.parentElement, actionPanel);
+    assert.equal(editButton.parentElement.classList.contains("action-group-end"), true);
+    assert.equal(newButton.parentElement.classList.contains("action-group-start"), true);
     assert.equal(editButton.classList.contains("d-none"), true);
     assert.equal(newButton.classList.contains("d-none"), false);
 
@@ -185,6 +192,30 @@ test("keeps layout dimensions responsive and contains actions in their panel", a
     assert.equal(newButton.classList.contains("d-none"), false);
     dom.window.close();
   }
+});
+
+test("uses the editorial color, type, background, and motion guidelines accessibly", async () => {
+  const dom = await loadPage(async () => response([]));
+  const { document } = dom.window;
+
+  assert.equal(document.querySelector('meta[name="theme-color"]').content, "#293d1c");
+  assert.match(html, /family=IBM\+Plex\+Mono/);
+  assert.match(html, /family=Space\+Grotesk/);
+  assert.match(styles, /--forest:\s*#78a82f/i);
+  assert.match(styles, /--copper:\s*#69aeca/i);
+  assert.match(styles, /--ochre:\s*#edc84b/i);
+  assert.match(styles, /--paper:\s*#eaf7fb/i);
+  assert.match(styles, /--display-font:\s*"Space Grotesk"/);
+  assert.match(styles, /--mono-font:\s*"IBM Plex Mono"/);
+  assert.doesNotMatch(styles, /font-family:\s*Inter\b/i);
+  assert.match(styles, /radial-gradient\([\s\S]*repeating-linear-gradient/);
+  assert.match(styles, /@keyframes\s+field-note-enter/);
+  assert.match(styles, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(styles, /h1\s*\{[^}]*font-size:\s*clamp\(1\.5rem,\s*3\.36vw,\s*3rem\)/s);
+  assert.match(styles, /\.subtitle\s*\{[^}]*white-space:\s*nowrap/s);
+  assert.match(styles, /\.action-panel\s+\.btn\s*\{[^}]*height:\s*38px/s);
+  assert.equal(document.querySelector("h1").textContent, "Find the signal in every application.");
+  dom.window.close();
 });
 
 test("arranges requested detail and modal fields vertically in the specified order", async () => {
@@ -298,7 +329,7 @@ test("opens and cancels the Resume Data modal without submitting a resume", asyn
   const uploadButton = document.querySelector("#upload-resume");
   const modal = document.querySelector("#resume-modal");
 
-  assert.equal(uploadButton.previousElementSibling.classList.contains("offer-panel"), true);
+  assert.equal(uploadButton.parentElement.classList.contains("action-group-start"), true);
   uploadButton.click();
   assert.equal(modal.classList.contains("show"), true);
   assert.equal(document.querySelector("#resume-modal-title").textContent, "Resume Data");
