@@ -227,11 +227,12 @@ test("uses the editorial color, type, background, and motion guidelines accessib
   const dom = await loadPage(async () => response([]));
   const {document} = dom.window;
 
-  assert.equal(document.querySelector('meta[name="theme-color"]').content, "#293d1c");
+  assert.equal(document.querySelector('meta[name="theme-color"]').content, "#174e70");
   assert.match(html, /family=IBM\+Plex\+Mono/);
   assert.match(html, /family=Space\+Grotesk/);
-  assert.match(styles, /--forest:\s*#78a82f/i);
-  assert.match(styles, /--copper:\s*#69aeca/i);
+  assert.match(styles, /--sky:\s*#58a9d2/i);
+  assert.match(styles, /--sky-deep:\s*#174e70/i);
+  assert.doesNotMatch(styles, /--forest|--lime/i);
   assert.match(styles, /--ochre:\s*#ebcc64/i);
   assert.match(styles, /--paper:\s*#eaf7fb/i);
   assert.match(styles, /--display-font:\s*"Space Grotesk"/);

@@ -3,7 +3,7 @@
 - Typography: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like
   Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics.
 - Color & Theme: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors
-  with sharp and vivid accents outperform timid, evenly-distributed palettes. Draw from IDE themes and
+  with sharp and accents outperform timid, evenly-distributed palettes. Draw from IDE themes and
   cultural aesthetics for inspiration.
 - Motion: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML.
   Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated

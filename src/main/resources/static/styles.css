@@ -1,21 +1,24 @@
 :root {
   color-scheme: light;
-  --forest: #78a82f;
-  --forest-deep: #293d1c;
-  --forest-soft: #a8cb68;
-  --copper: #69aeca;
-  --copper-deep: #367d99;
+  --sky: #58a9d2;
+  --sky-deep: #174e70;
+  --sky-soft: #a7d9ee;
+  --blue: #69aeca;
+  --blue-deep: #367d99;
   --ochre: #ebcc64;
   --paper: #eaf7fb;
-  --paper-shadow: #d8edf3;
-  --ink: #293b31;
-  --muted: #61776d;
-  --line: #c9e0e5;
+  --paper-shadow: #d2eaf4;
+  --ink: #183c55;
+  --muted: #557385;
+  --line: #bfdeeb;
   --surface: #fbfeff;
-  --surface-tint: #e3f3f7;
-  --success: #527b2d;
+  --surface-tint: #dff2fa;
+  --success: #28789a;
   --danger: #a33f31;
   --focus: #d1a820;
+  --radius-card: 20px;
+  --shadow-card: 0 20px 55px rgb(23 78 112 / 9%), 0 3px 10px rgb(23 78 112 / 5%);
+  --ease-field: cubic-bezier(.2, .75, .2, 1);
   --display-font: "Space Grotesk", "Trebuchet MS", sans-serif;
   --body-font: "Space Grotesk", "Trebuchet MS", sans-serif;
   --mono-font: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
@@ -31,12 +34,27 @@ html {
 
 body {
   background: radial-gradient(ellipse at 91% 8%, rgb(237 200 75 / 20%), transparent 25rem),
-  radial-gradient(ellipse at 3% 28%, rgb(105 174 202 / 16%), transparent 27rem),
-  repeating-linear-gradient(0deg, rgb(41 61 28 / 1.4%) 0 1px, transparent 1px 5px),
+  radial-gradient(ellipse at 3% 28%, rgb(72 168 213 / 22%), transparent 27rem),
+  repeating-linear-gradient(0deg, rgb(23 78 112 / 2%) 0 1px, transparent 1px 5px),
   var(--paper);
   color: var(--ink);
   font-family: var(--body-font);
   min-height: 100vh;
+  isolation: isolate;
+  overflow-x: hidden;
+  position: relative;
+}
+
+body::before {
+  background-image: linear-gradient(rgb(54 125 153 / 4%) 1px, transparent 1px),
+  linear-gradient(90deg, rgb(54 125 153 / 4%) 1px, transparent 1px);
+  background-size: 34px 34px;
+  content: "";
+  inset: 0;
+  mask-image: linear-gradient(to bottom, #000 0, transparent 78%);
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
 }
 
 button,
@@ -48,7 +66,7 @@ textarea {
 
 .topbar {
   background: linear-gradient(110deg, rgb(255 255 255 / 3%), transparent 42%),
-  var(--forest);
+  var(--sky-deep);
   border-bottom: 3px solid var(--ochre);
   color: var(--surface);
   position: relative;
@@ -91,8 +109,8 @@ textarea {
 .topbar-note {
   color: #f3de91;
   font-family: var(--mono-font);
-  font-size: .72rem;
-  font-weight: 500;
+  font-size: .92rem;
+  font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
 }
@@ -103,15 +121,15 @@ main.container {
 }
 
 .intro {
-  animation: field-note-enter 680ms cubic-bezier(.2, .75, .2, 1) both;
+  animation: field-note-enter 680ms var(--ease-field) both;
   padding: 12px 0 10px;
   position: relative;
 }
 
 .intro::after {
-  border: 1px solid rgb(120 168 47 / 22%);
+  border: 1px solid rgb(54 125 153 / 22%);
   border-radius: 50%;
-  box-shadow: 0 0 0 13px rgb(120 168 47 / 5%), 0 0 0 27px rgb(105 174 202 / 4%);
+  box-shadow: 0 0 0 13px rgb(54 125 153 / 5%), 0 0 0 27px rgb(105 174 202 / 4%);
   content: "";
   height: 84px;
   position: absolute;
@@ -122,7 +140,7 @@ main.container {
 }
 
 .eyebrow {
-  color: var(--copper);
+  color: var(--blue-deep);
   font-family: var(--mono-font);
   font-size: .66rem;
   font-weight: 600;
@@ -132,7 +150,7 @@ main.container {
 }
 
 h1 {
-  color: var(--forest-deep);
+  color: var(--sky-deep);
   font-family: var(--display-font);
   font-size: clamp(1.5rem, 3.36vw, 3rem);
   font-weight: 700;
@@ -160,19 +178,25 @@ h1 {
 }
 
 .workspace > section:first-child {
-  animation: field-note-enter 700ms 100ms cubic-bezier(.2, .75, .2, 1) both;
+  animation: field-note-enter 700ms 100ms var(--ease-field) both;
 }
 
 .workspace > section:nth-child(2) {
-  animation: field-note-enter 700ms 190ms cubic-bezier(.2, .75, .2, 1) both;
+  animation: field-note-enter 700ms 190ms var(--ease-field) both;
 }
 
 .panel {
-  background: rgb(251 254 255 / 94%);
+  background: linear-gradient(145deg, rgb(255 255 255 / 96%), rgb(234 247 251 / 90%));
   border: 1px solid var(--line);
-  border-radius: 20px;
-  box-shadow: 0 18px 50px rgb(41 61 28 / 7%), 0 2px 7px rgb(41 61 28 / 4%);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   padding: clamp(20px, 2.2vw, 30px);
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.workspace > .panel:hover {
+  border-color: #b7d6dd;
+  box-shadow: 0 24px 62px rgb(23 78 112 / 11%), 0 4px 12px rgb(23 78 112 / 6%);
 }
 
 .offer-panel,
@@ -183,7 +207,7 @@ h1 {
 
 .offer-panel::before,
 .details-panel::before {
-  background: linear-gradient(90deg, var(--copper), var(--ochre));
+  background: linear-gradient(90deg, var(--blue), var(--ochre));
   border-radius: 20px 20px 0 0;
   content: "";
   height: 4px;
@@ -205,7 +229,7 @@ h1 {
 }
 
 .panel h2 {
-  color: var(--forest-deep);
+  color: var(--sky-deep);
   font-family: var(--display-font);
   font-size: 1.28rem;
   font-weight: 700;
@@ -259,12 +283,12 @@ h1 {
   padding: 14px 15px;
   position: relative;
   text-align: left;
-  transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+  transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
   width: 100%;
 }
 
 .offer-button::before {
-  background: var(--copper);
+  background: var(--blue);
   border-radius: 2px;
   content: "";
   inset: 13px auto 13px 0;
@@ -282,8 +306,9 @@ h1 {
 }
 
 .offer-button[aria-current="true"] {
-  background: #eaf4d6;
-  border-color: #c7dc9d;
+  background: #dff2fa;
+  border-color: #a8d5e8;
+  box-shadow: inset 0 0 0 1px rgb(54 125 153 / 8%);
 }
 
 .offer-button[aria-current="true"]::before {
@@ -292,7 +317,7 @@ h1 {
 }
 
 .offer-button strong {
-  color: var(--forest-deep);
+  color: var(--sky-deep);
   display: block;
   font-family: var(--display-font);
   font-size: .98rem;
@@ -308,7 +333,7 @@ h1 {
 }
 
 .offer-button .offer-company {
-  color: var(--copper-deep);
+  color: var(--blue-deep);
   font-family: var(--mono-font);
   font-size: .7rem;
   font-weight: 500;
@@ -337,7 +362,7 @@ h1 {
   background: #dff2f7;
   border: 1px solid #c2e3ec;
   border-radius: 18px 18px 18px 4px;
-  color: var(--forest-soft);
+  color: var(--sky-deep);
   display: flex;
   font-size: 1.3rem;
   height: 54px;
@@ -373,10 +398,10 @@ h1 {
 }
 
 .detail-item h3 {
-  color: var(--copper-deep);
+  color: var(--blue-deep);
   font-family: var(--mono-font);
   font-size: .65rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: .12em;
   margin: 0 0 8px;
   text-transform: uppercase;
@@ -384,7 +409,7 @@ h1 {
 
 .detail-item p,
 .detail-item .markdown-content {
-  color: #344a3b;
+  color: #244b64;
   font-size: .94rem;
   line-height: 1.7;
   margin: 0;
@@ -400,13 +425,13 @@ h1 {
 }
 
 .markdown-content a {
-  color: var(--copper-deep);
+  color: var(--blue-deep);
   text-decoration-color: rgb(54 125 153 / 48%);
   text-underline-offset: 3px;
 }
 
 .markdown-content a:hover {
-  color: var(--forest-deep);
+  color: var(--sky-deep);
 }
 
 .search-results h2 {
@@ -419,9 +444,9 @@ h1 {
 }
 
 .candidate-match {
-  background: var(--surface-tint);
+  background: linear-gradient(105deg, #e2f3f7, #f5fbfd);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--forest-soft);
+  border-left: 3px solid var(--sky);
   border-radius: 5px 13px 13px 5px;
   padding: 14px 16px;
 }
@@ -433,7 +458,7 @@ h1 {
 }
 
 .candidate-match strong {
-  color: var(--forest-deep);
+  color: var(--sky-deep);
   font-family: var(--display-font);
 }
 
@@ -451,11 +476,18 @@ h1 {
   font-weight: 600;
   letter-spacing: -.015em;
   padding: .68rem 1rem;
+  box-shadow: 0 2px 0 rgb(23 78 112 / 8%);
   transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .btn:hover:not(:disabled) {
+  box-shadow: 0 5px 12px rgb(23 78 112 / 13%);
   transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  box-shadow: 0 1px 2px rgb(23 78 112 / 10%);
+  transform: translateY(0);
 }
 
 .btn-primary {
@@ -468,7 +500,7 @@ h1 {
   --bs-btn-disabled-bg: #f6f0a6;
   --bs-btn-disabled-border-color: #f6f0a6 !important;
   --bs-btn-disabled-color: #888;
-  --bs-btn-color: var(--forest-deep);
+  --bs-btn-color: var(--sky-deep);
 }
 
 .btn-light {
@@ -481,9 +513,10 @@ h1 {
 
 .action-panel {
   align-items: center;
-  animation: field-note-enter 700ms 280ms cubic-bezier(.2, .75, .2, 1) both;
-  background: var(--forest-soft);
-  border-color: var(--forest-soft);
+  animation: field-note-enter 700ms 280ms var(--ease-field) both;
+  background: linear-gradient(105deg, var(--sky-deep), #28789a 72%, var(--sky));
+  border-color: #28789a;
+  box-shadow: 0 10px 26px rgb(23 78 112 / 18%), inset 0 1px rgb(255 255 255 / 14%);
   display: flex;
   flex-wrap: nowrap;
   justify-content: space-between;
@@ -516,7 +549,7 @@ h1 {
   --bs-btn-color: #e8f6fa;
   --bs-btn-border-color: rgb(232 246 250 / 48%);
   --bs-btn-hover-bg: #dff2f7;
-  --bs-btn-hover-color: var(--forest-deep);
+  --bs-btn-hover-color: var(--sky-deep);
   --bs-btn-hover-border-color: #dff2f7;
   --bs-btn-disabled-color: #4c4c4e;
   --bs-btn-disabled-border-color: rgb(232 246 250 / 24%);
@@ -535,17 +568,17 @@ h1 {
 .action-panel .btn-primary {
   --bs-btn-bg: var(--ochre);
   --bs-btn-border-color: var(--ochre);
-  --bs-btn-color: var(--forest-deep);
+  --bs-btn-color: var(--sky-deep);
   --bs-btn-hover-bg: #f5d96b;
   --bs-btn-hover-border-color: #f5d96b;
-  --bs-btn-hover-color: var(--forest-deep);
+  --bs-btn-hover-color: var(--sky-deep);
 }
 
 .offer-modal-content {
-  background: var(--surface);
+  background: linear-gradient(150deg, #fff, #eff8fa);
   border: 1px solid var(--line);
   border-radius: 18px;
-  box-shadow: 0 28px 90px rgb(41 61 28 / 25%);
+  box-shadow: 0 28px 90px rgb(23 78 112 / 25%);
 }
 
 .offer-modal-content .modal-header,
@@ -559,7 +592,7 @@ h1 {
 }
 
 .offer-modal-content .modal-title {
-  color: var(--forest-deep);
+  color: var(--sky-deep);
   font-family: var(--display-font);
   font-size: 1.4rem;
   font-weight: 700;
@@ -574,7 +607,7 @@ h1 {
 
 .form-control,
 .form-select {
-  background-color: #fbfeff;
+  background-color: #f7fcfd;
   border-color: #c9e0e5;
   border-radius: 9px;
   color: var(--ink);
@@ -583,6 +616,7 @@ h1 {
 
 .form-control:focus,
 .form-select:focus {
+  background-color: #fff;
   border-color: var(--focus);
   box-shadow: 0 0 0 .2rem rgb(237 200 75 / 28%);
 }
@@ -600,7 +634,7 @@ h1 {
 
 .discard-backdrop {
   align-items: center;
-  background: rgb(41 61 28 / 58%);
+  background: rgb(23 78 112 / 58%);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -613,14 +647,14 @@ h1 {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 18px;
-  box-shadow: 0 28px 90px rgb(41 61 28 / 25%);
+  box-shadow: 0 28px 90px rgb(23 78 112 / 25%);
   max-width: 430px;
   padding: 28px;
   width: 100%;
 }
 
 .discard-dialog h2 {
-  color: var(--forest-deep);
+  color: var(--sky-deep);
   font-family: var(--display-font);
   font-size: 1.3rem;
   margin-bottom: 8px;
@@ -634,6 +668,11 @@ h1 {
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
+}
+
+::selection {
+  background: var(--ochre);
+  color: var(--sky-deep);
 }
 
 @keyframes field-note-enter {
