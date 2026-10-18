@@ -34,7 +34,7 @@ class CandidateMatchingControllerTest {
   @Test
   void returnsMatchingCandidates() throws Exception {
     when(candidateMatchingService.findCandidates("offer-1"))
-        .thenReturn(List.of(new CandidateMatch("Ada Lovelace", "ada@example.com")));
+        .thenReturn(List.of(new CandidateMatch("Ada Lovelace", "ada@example.com", 1, 0.91)));
 
     mockMvc
         .perform(
@@ -43,7 +43,9 @@ class CandidateMatchingControllerTest {
                 .content("{\"jobOfferId\":\"offer-1\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].candidateName").value("Ada Lovelace"))
-        .andExpect(jsonPath("$[0].candidateEmail").value("ada@example.com"));
+        .andExpect(jsonPath("$[0].candidateEmail").value("ada@example.com"))
+        .andExpect(jsonPath("$[0].rankingPosition").value(1))
+        .andExpect(jsonPath("$[0].matchingProbability").value(0.91));
 
     verify(candidateMatchingService).findCandidates(eq("offer-1"));
   }
@@ -74,6 +76,25 @@ class CandidateMatchingControllerTest {
     mockMvc
         .perform(post("/api/candidate-matches").contentType("application/json").content("{}"))
         .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
+            post("/api/candidate-matches")
+                .contentType("application/json")
+                .content("{\"jobOfferId\":null}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_CANDIDATE_MATCH_REQUEST"));
+  }
+
+  @Test
+  void rejectsMalformedJsonWithDocumentedError() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/candidate-matches")
+                .contentType("application/json")
+                .content("{\"jobOfferId\":"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_CANDIDATE_MATCH_REQUEST"));
   }
 
   @Test

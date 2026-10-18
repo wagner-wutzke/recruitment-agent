@@ -45,6 +45,17 @@ class CandidateMatchingPropertiesTest {
   }
 
   @Test
+  void acceptsThresholdRangeBoundaries() {
+    CandidateMatchingProperties properties = new CandidateMatchingProperties();
+
+    properties.setSimilarityThreshold(0.0);
+    assertEquals(0.0, properties.getSimilarityThreshold());
+
+    properties.setSimilarityThreshold(1.0);
+    assertEquals(1.0, properties.getSimilarityThreshold());
+  }
+
+  @Test
   void rejectsBlankModelOverride() {
     CandidateMatchingProperties properties = new CandidateMatchingProperties();
 
