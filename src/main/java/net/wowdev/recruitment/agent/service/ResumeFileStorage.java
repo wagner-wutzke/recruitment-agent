@@ -52,14 +52,17 @@ public class ResumeFileStorage {
     if (candidateName == null || candidateName.isBlank()) {
       throw new IllegalArgumentException("Candidate name is required");
     }
-    if (candidateName.contains("/") || candidateName.contains("\\") || candidateName.indexOf('\0') >= 0) {
+    if (candidateName.contains("/")
+        || candidateName.contains("\\")
+        || candidateName.indexOf('\0') >= 0) {
       throw new IllegalArgumentException("Candidate name contains invalid filename characters");
     }
 
     String filename = candidateName.replace(" ", "_") + ".pdf";
     Path target = directory.resolve(filename).normalize();
     Files.createDirectories(directory);
-    Path backup = Files.exists(target) ? Files.createTempFile(directory, ".resume-backup-", ".tmp") : null;
+    Path backup =
+        Files.exists(target) ? Files.createTempFile(directory, ".resume-backup-", ".tmp") : null;
     if (backup != null) {
       Files.move(target, backup, StandardCopyOption.REPLACE_EXISTING);
     }
@@ -102,8 +105,8 @@ public class ResumeFileStorage {
       try {
         Files.deleteIfExists(backup);
       } catch (IOException exception) {
-        System.getLogger(ResumeFileStorage.class.getName()).log(
-            System.Logger.Level.WARNING, "Unable to delete resume file backup", exception);
+        System.getLogger(ResumeFileStorage.class.getName())
+            .log(System.Logger.Level.WARNING, "Unable to delete resume file backup", exception);
       }
     }
 

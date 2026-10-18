@@ -31,5 +31,4 @@ public class CandidateMatchingProperties {
     }
     this.similarityThreshold = similarityThreshold;
   }
-
 }

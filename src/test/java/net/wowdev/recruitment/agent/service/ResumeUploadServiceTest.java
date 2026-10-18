@@ -50,14 +50,15 @@ class ResumeUploadServiceTest {
   }
 
   private static byte[] pdf(String text) throws IOException {
-    try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+    try (PDDocument document = new PDDocument();
+        ByteArrayOutputStream output = new ByteArrayOutputStream()) {
       PDPage page = new PDPage();
       document.addPage(page);
       try (PDPageContentStream content = new PDPageContentStream(document, page)) {
         content.beginText();
         content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
         content.newLineAtOffset(50, 700);
-        content.showText(text + " " + EMAIL);
+        content.showText(text);
         content.endText();
       }
       document.save(output);
@@ -128,7 +129,8 @@ class ResumeUploadServiceTest {
         org.mockito.ArgumentCaptor.forClass(Filter.Expression.class);
     verify(vectorStore).delete(filterCaptor.capture());
     assertEquals("documentId", ((Filter.Key) filterCaptor.getValue().left()).key());
-    assertEquals(previous.getDocumentId(), ((Filter.Value) filterCaptor.getValue().right()).value());
+    assertEquals(
+        previous.getDocumentId(), ((Filter.Value) filterCaptor.getValue().right()).value());
   }
 
   @Test
@@ -149,7 +151,8 @@ class ResumeUploadServiceTest {
     doThrow(new IllegalStateException("database unavailable"))
         .when(repository)
         .save(org.mockito.ArgumentMatchers.any(ResumeDocument.class));
-    ResumeUploadService service = new ResumeUploadService(repository, fileStorage, indexer, vectorStore);
+    ResumeUploadService service =
+        new ResumeUploadService(repository, fileStorage, indexer, vectorStore);
 
     assertThrows(
         IllegalStateException.class,
@@ -169,7 +172,8 @@ class ResumeUploadServiceTest {
     fileStorage.store(CANDIDATE_NAME, "previous PDF".getBytes());
     when(repository.findById(EMAIL)).thenReturn(Optional.empty());
     doThrow(new IllegalStateException("Chroma unavailable")).when(vectorStore).add(anyList());
-    ResumeUploadService service = new ResumeUploadService(repository, fileStorage, indexer, vectorStore);
+    ResumeUploadService service =
+        new ResumeUploadService(repository, fileStorage, indexer, vectorStore);
 
     assertThrows(
         IllegalStateException.class,
@@ -220,7 +224,8 @@ class ResumeUploadServiceTest {
         .when(repository)
         .save(org.mockito.ArgumentMatchers.any(ResumeDocument.class));
     doThrow(new IllegalStateException("Chroma delete failed")).when(vectorStore).delete(anyList());
-    ResumeUploadService service = new ResumeUploadService(repository, fileStorage, indexer, vectorStore);
+    ResumeUploadService service =
+        new ResumeUploadService(repository, fileStorage, indexer, vectorStore);
 
     IllegalStateException failure =
         assertThrows(
@@ -238,7 +243,8 @@ class ResumeUploadServiceTest {
     Files.writeString(notDirectory, "not a directory");
     ResumeFileStorage fileStorage = new ResumeFileStorage(notDirectory.resolve("resumes"));
     when(repository.findById(EMAIL)).thenReturn(Optional.empty());
-    ResumeUploadService service = new ResumeUploadService(repository, fileStorage, indexer(vectorStore), vectorStore);
+    ResumeUploadService service =
+        new ResumeUploadService(repository, fileStorage, indexer(vectorStore), vectorStore);
 
     assertThrows(
         ResumeStorageException.class,
@@ -261,7 +267,8 @@ class ResumeUploadServiceTest {
             UUID.randomUUID());
     when(repository.findById(EMAIL)).thenReturn(Optional.of(resume));
     ResumeUploadService service =
-        new ResumeUploadService(repository, fileStorage, mock(ResumePdfIndexer.class), mock(VectorStore.class));
+        new ResumeUploadService(
+            repository, fileStorage, mock(ResumePdfIndexer.class), mock(VectorStore.class));
 
     ResumeDownload downloaded = service.download(EMAIL);
 

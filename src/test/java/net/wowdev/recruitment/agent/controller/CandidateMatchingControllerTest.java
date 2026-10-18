@@ -123,7 +123,6 @@ class CandidateMatchingControllerTest {
                 .content("{\"jobOfferId\":\"offer-1\"}"))
         .andExpect(status().isServiceUnavailable())
         .andExpect(jsonPath("$.code").value("CANDIDATE_MATCHING_FAILED"))
-        .andExpect(
-            jsonPath("$.message").value("Candidate matching could not be completed."));
+        .andExpect(jsonPath("$.message").value("Candidate matching could not be completed."));
   }
 }

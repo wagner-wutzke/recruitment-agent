@@ -46,7 +46,7 @@ public class ResumeUploadService {
       try {
         vectorStore.add(documents);
         ResumeDocument saved =
-                resumeRepository.save(
+            resumeRepository.save(
                 new ResumeDocument(
                     candidateEmail,
                     candidateName,
@@ -103,7 +103,8 @@ public class ResumeUploadService {
       vectorStore.delete(documentIds);
     } catch (RuntimeException cleanupException) {
       failure.addSuppressed(cleanupException);
-      LOGGER.log(System.Logger.Level.ERROR, "Unable to clean up failed resume indexing", cleanupException);
+      LOGGER.log(
+          System.Logger.Level.ERROR, "Unable to clean up failed resume indexing", cleanupException);
     }
   }
 }

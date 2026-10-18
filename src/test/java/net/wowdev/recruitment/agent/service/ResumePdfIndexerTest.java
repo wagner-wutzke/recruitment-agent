@@ -22,10 +22,12 @@ import org.springframework.ai.vectorstore.VectorStore;
 class ResumePdfIndexerTest {
 
   private final VectorStore vectorStore = org.mockito.Mockito.mock(VectorStore.class);
-  private final ResumePdfIndexer indexer = new ResumePdfIndexer(vectorStore, new ResumeIndexingProperties());
+  private final ResumePdfIndexer indexer =
+      new ResumePdfIndexer(vectorStore, new ResumeIndexingProperties());
 
   private static byte[] pdfWithText(String text) throws IOException {
-    try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+    try (PDDocument document = new PDDocument();
+        ByteArrayOutputStream output = new ByteArrayOutputStream()) {
       PDPage page = new PDPage();
       document.addPage(page);
       try (PDPageContentStream content = new PDPageContentStream(document, page)) {
@@ -41,7 +43,8 @@ class ResumePdfIndexerTest {
   }
 
   private static byte[] emptyPdf() throws IOException {
-    try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+    try (PDDocument document = new PDDocument();
+        ByteArrayOutputStream output = new ByteArrayOutputStream()) {
       document.addPage(new PDPage());
       document.save(output);
       return output.toByteArray();
@@ -57,13 +60,15 @@ class ResumePdfIndexerTest {
             documentId,
             "Ada_Lovelace.pdf");
 
-    org.mockito.ArgumentCaptor<List<Document>> documents = org.mockito.ArgumentCaptor.forClass(List.class);
+    org.mockito.ArgumentCaptor<List<Document>> documents =
+        org.mockito.ArgumentCaptor.forClass(List.class);
     verify(vectorStore).add(documents.capture());
     assertFalse(ids.isEmpty());
     assertEquals(
         "candidate@example.com",
         documents.getValue().getFirst().getMetadata().get("candidateEmail"));
-    assertEquals(documentId.toString(), documents.getValue().getFirst().getMetadata().get("documentId"));
+    assertEquals(
+        documentId.toString(), documents.getValue().getFirst().getMetadata().get("documentId"));
     assertEquals("Ada_Lovelace.pdf", documents.getValue().getFirst().getMetadata().get("fileName"));
   }
 
@@ -76,14 +81,19 @@ class ResumePdfIndexerTest {
             "Candidate.pdf");
 
     assertEquals("first@example.com", prepared.candidateEmail());
-    assertEquals("first@example.com", prepared.documents().getFirst().getMetadata().get("candidateEmail"));
+    assertEquals(
+        "first@example.com", prepared.documents().getFirst().getMetadata().get("candidateEmail"));
   }
 
   @Test
   void rejectsPdfWithoutValidEmailAddress() throws IOException {
     assertThrows(
         InvalidResumePdfException.class,
-        () -> indexer.prepare(pdfWithText("Resume text without contact address"), UUID.randomUUID(), "resume.pdf"));
+        () ->
+            indexer.prepare(
+                pdfWithText("Resume text without contact address"),
+                UUID.randomUUID(),
+                "resume.pdf"));
     verifyNoInteractions(vectorStore);
   }
 

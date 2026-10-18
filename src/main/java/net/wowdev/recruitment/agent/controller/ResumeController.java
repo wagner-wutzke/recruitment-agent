@@ -27,7 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/resumes")
-public class  ResumeController {
+public class ResumeController {
 
   private final ResumeUploadService resumeUploadService;
 
@@ -79,7 +79,8 @@ public class  ResumeController {
   @ExceptionHandler(ResumeDownloadException.class)
   public ResponseEntity<ApiErrorResponse> handleDownloadFailure() {
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-        .body(new ApiErrorResponse("RESUME_DOWNLOAD_FAILED", "Resume file could not be downloaded."));
+        .body(
+            new ApiErrorResponse("RESUME_DOWNLOAD_FAILED", "Resume file could not be downloaded."));
   }
 
   @ExceptionHandler({

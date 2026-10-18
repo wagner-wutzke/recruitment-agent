@@ -66,15 +66,16 @@ class ResumeVectorStoreConfigurationTest {
               .anyMatch(
                   result ->
                       candidateEmail.equals(result.getMetadata().get("candidateEmail"))
-                          && newDocumentId.toString()
+                          && newDocumentId
+                              .toString()
                               .equals(result.getMetadata().get("documentId"))));
       assertTrue(
           results.stream()
               .noneMatch(
-                  result -> oldDocumentId.toString().equals(result.getMetadata().get("documentId"))));
+                  result ->
+                      oldDocumentId.toString().equals(result.getMetadata().get("documentId"))));
     } finally {
       vectorStore.delete(List.of(oldDocument.getId(), newDocument.getId()));
     }
-
   }
 }

@@ -34,11 +34,6 @@ relationships, in addition to exact keyword matches.
 Rank candidates by a total match score based on the comparison of job requirements and resume skills
 and experience. In the initial version, use this criterion as the default ranking method.
 
-## F07 — Show the top three recommendations
-
-After matching completes, display the three highest-ranked candidates in descending order of match
-score or probability.
-
 ## F08 — Explain candidate recommendations
 
 For each recommended candidate, display the information supporting the ranking: matched skills,

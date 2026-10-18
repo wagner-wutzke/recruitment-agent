@@ -42,9 +42,7 @@ class ResumeControllerTest {
 
   private static org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder
       validMultipart() {
-    return multipart("/api/resumes")
-        .file(pdfFile())
-        .param("candidateName", NAME);
+    return multipart("/api/resumes").file(pdfFile()).param("candidateName", NAME);
   }
 
   private static MockMultipartFile pdfFile() {
@@ -112,10 +110,7 @@ class ResumeControllerTest {
   @Test
   void rejectsBlankCandidateFieldsAndEmptyFile() throws Exception {
     mockMvc
-        .perform(
-            multipart("/api/resumes")
-                .file(pdfFile())
-                .param("candidateName", " "))
+        .perform(multipart("/api/resumes").file(pdfFile()).param("candidateName", " "))
         .andExpect(status().isBadRequest());
     mockMvc
         .perform(
@@ -148,10 +143,7 @@ class ResumeControllerTest {
         };
 
     mockMvc
-        .perform(
-            multipart("/api/resumes")
-                .file(unreadableFile)
-                .param("candidateName", NAME))
+        .perform(multipart("/api/resumes").file(unreadableFile).param("candidateName", NAME))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("INVALID_RESUME_UPLOAD"));
   }
@@ -187,7 +179,11 @@ class ResumeControllerTest {
         .perform(get("/api/resumes/{candidateEmail}/file", EMAIL))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_PDF))
-        .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString("Ada_Lovelace.pdf")))
+        .andExpect(
+            header()
+                .string(
+                    HttpHeaders.CONTENT_DISPOSITION,
+                    org.hamcrest.Matchers.containsString("Ada_Lovelace.pdf")))
         .andExpect(content().bytes(pdf));
   }
 

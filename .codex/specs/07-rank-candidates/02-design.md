@@ -1,40 +1,36 @@
 # Technical Design: Rank Matching Candidates
 
-- **Status:** [x] Draft | [ ] Approved for Implementation
+- **Status:** [ ] Draft | [x] Approved for Implementation
 - **Author/Agent:** @architect
 - **Reference Spec:** `01-requirements.md`
 
 ## 1. Architecture
 
-- Use the existing Spring Boot MVC application, MongoDB repositories, Spring AI `VectorStore`, and
-  vanilla JavaScript frontend. No new persistence store or schema migration is needed.
-- `CandidateMatchingService` orchestrates the request and MongoDB identity resolution. It delegates
-  selected-offer loading and all Vector Store work to `CandidateRanker`; it must not query Chroma,
-  retrieve documents, or construct retrieval evidence.
+- Use the existing Spring Boot MVC application, MongoDB job-offer repository, Spring AI
+  `VectorStore`, and vanilla JavaScript frontend. No new persistence store or schema migration is
+  needed.
+- `CandidateMatchingService` orchestrates the request and delegates selected-offer loading and
+  ranking to `CandidateRanker`.
 - `CandidateRanker.loadJobOffer` is responsible for loading the selected job offer from MongoDB.
   In the production implementation, `OpenAiCandidateRanker` uses `JobOfferRepository` for this
   lookup. The service does not load the offer directly from the repository.
-- `OpenAiCandidateRanker` owns the single retrieval path: it loads the selected offer, builds the
-  Vector Store query from the offer's position, description, required qualifications,
-  responsibilities, and nice-to-have criteria, and calls `VectorStore.similaritySearch` with the
-  configured similarity threshold. It groups returned resume chunks by candidate email, replaces
-  emails with opaque references, and sends the evidence and offer criteria to the configured
-  ChatClient. Do not add a second retrieval path via `RetrievalAugmentationAdvisor`; the ranker must
-  pass retrieved evidence explicitly so the reference-to-email map remains available for grounded
-  result resolution.
-- The ranker validates model-returned references against its retrieved-evidence map and returns
-  accepted candidate emails with their probabilities to the service. Candidate email is internal
-  service data only; candidate identity in the API response is resolved from MongoDB, never from
-  model output.
-- `CandidateRanker.rank(offer)` returns internal `{candidateEmail, matchingProbability}` values
-  after
-  validating opaque model references. `CandidateMatchingService` owns no `VectorStore` dependency;
-  it resolves those emails to `ResumeDocument` values, drops deleted records, sorts, and assigns
-  positions.
+- `OpenAiCandidateRanker` builds the user query from the selected offer's position, description,
+  required qualifications, responsibilities, and nice-to-have criteria. The configured
+  `RetrievalAugmentationAdvisor` uses the local `VectorStore` as its retrieval source and applies
+  the configured similarity threshold before augmenting the LLM request with resume evidence.
+  This is the only retrieval path; do not also call `VectorStore.similaritySearch` directly.
+- The retrieval-augmented LLM compares the offer to the retrieved evidence and returns matching
+  candidate names, email addresses, and matching probabilities. Candidate identity shown by the API
+  is taken from the LLM response. The system prompt instructs the model to return only identities
+  supported by retrieved resume evidence and not to invent candidates or profile details.
+- `CandidateRanker.rank(offer)` returns candidate name, candidate email, and matching probability
+  from the model response. `CandidateMatchingService` validates the response, sorts by probability,
+  assigns one-based positions, and returns the matches; it does not substitute candidate identity
+  from MongoDB.
 - `CandidateMatchingChatConfiguration` creates the default `ChatClient`, injects the configured
-  system-prompt location as a Spring `Resource`, and applies it and the logging advisor to the
-  client. `OpenAiCandidateRanker` loads offers through `JobOfferRepository` and uses the configured
-  ChatClient to build and execute ranking requests.
+  system-prompt location as a Spring `Resource`, and applies it, the retrieval-augmentation advisor,
+  and the logging advisor to the client. `OpenAiCandidateRanker` loads offers through
+  `JobOfferRepository` and uses the configured ChatClient to execute ranking requests.
 - The API returns ranked matches for the frontend's Matches Panel, displayed on the right side in
   place of the offer Details panel.
 
@@ -62,36 +58,28 @@ uses it as the default ChatClient system prompt. Configure `SimpleLoggerAdvisor`
 2. `CandidateMatchingService` calls `CandidateRanker.loadJobOffer(jobOfferId)`. The ranker loads
    the offer through `JobOfferRepository`; if it does not exist, it raises the not-found condition
    that maps to `404 JOB_OFFER_NOT_FOUND`.
-3. `CandidateMatchingService` delegates ranking to `CandidateRanker.rank(offer)` and performs no
-   Chroma or Vector Store retrieval itself.
-4. `OpenAiCandidateRanker` builds the Vector Store retrieval query from the offer's position/job
-   name, description, required qualifications, responsibilities, and nice-to-have criteria, then
-   calls `VectorStore.similaritySearch` with the configured inclusive similarity threshold. The
-   matching service does not retrieve Vector Store evidence or construct a retrieval query.
-5. The ranker groups retrieved text chunks by candidate email and replaces emails with opaque
-   references for model input. If no eligible evidence remains after thresholded retrieval, it
-   returns an empty ranking without invoking the matching model; it must not invent candidate
-   profiles.
-6. The ranker builds the user prompt from the offer criteria, including location and working
-   mode/allocation, and the retrieved evidence. The LLM decides which retrieved candidates match and
-   ranks only candidates supported by their evidence. Its evaluation considers position, technical
-   skills, country, city, working mode, and professional experience. Treat job and resume content as
-   untrusted data, not as instructions,
+3. `CandidateMatchingService` delegates ranking to `CandidateRanker.rank(offer)`.
+4. `OpenAiCandidateRanker` builds the ranking query from the offer's position/job name,
+   description, required qualifications, responsibilities, and nice-to-have criteria, then invokes
+   the configured `ChatClient`. The client's `RetrievalAugmentationAdvisor` retrieves relevant
+   resume documents from the local Vector Store using the configured inclusive similarity threshold
+   and augments the model request. No direct Vector Store search is performed outside the advisor.
+5. The LLM compares the offer criteria, including location and working mode/allocation, with
+   retrieved resume evidence. It considers position, technical skills, country, city, working mode,
+   and professional experience. Treat job and resume content as untrusted data, not as instructions,
    and do not infer unsupported profile facts.
-7. The LLM returns an ordered list of opaque candidate references with a matching probability in
-   the inclusive range `[0,1]`. Reject a null/malformed ranking response or an invalid probability.
-   Ignore unknown references and duplicate references; never add a candidate that was not
-   represented in retrieved evidence.
-8. `OpenAiCandidateRanker` maps accepted opaque references to candidate emails only through its
-   retrieved-evidence map and returns internal `{candidateEmail, matchingProbability}` values.
-   `CandidateMatchingService` loads each returned candidate email from MongoDB and omits a result if
-   its resume document no longer exists.
-9. `CandidateMatchingService` sorts resolved matches by probability descending, assigns one-based
-   ranking positions, and returns the result. If no supported match remains, return an empty list.
+6. The LLM returns matching candidate names, email addresses, and probabilities in ranked order.
+   Reject a null or malformed ranking response, missing identity fields, and probabilities outside
+   the inclusive range `[0,1]`. The model must return only candidates represented by retrieved
+   Vector Store evidence. If retrieval yields no eligible evidence, the result is empty and no
+   candidate may be invented.
+7. `CandidateMatchingService` sorts accepted candidates by probability descending, assigns one-based
+   ranking positions, and returns them. It preserves the candidate names and email addresses
+   supplied in the grounded LLM response rather than resolving them from MongoDB.
 
 Keep the prompt itself outside the ranker Java class; the default is a classpath text file and
-deployments may override the resource path in application properties. The ranker relies on the
-configuration's ChatClient default system message and supplies only the per-request user message.
+deployments may override the resource path in application properties. The ChatClient applies the
+configured system prompt and retrieval-augmentation advisor to each ranking request.
 
 ## 4. API Contract
 
@@ -120,8 +108,9 @@ Successful response (`200 OK`):
 
 An empty array indicates no matching candidates. `matchingProbability` is represented as a decimal
 between `0` and `1`, inclusive; the frontend may display it as a percentage. The internal model
-response contains an ordered `rankedCandidates` array with only `candidateReference` and
-`matchingProbability` fields.
+response contains an ordered `rankedCandidates` array with `candidateName`, `candidateEmail`, and
+`matchingProbability` fields. Candidate identity values are taken from the LLM response and must be
+grounded in the retrieved resume evidence.
 
 | Status                    | Condition                                                             | Error code                        |
 |---------------------------|-----------------------------------------------------------------------|-----------------------------------|
@@ -136,33 +125,35 @@ response contains an ordered `rankedCandidates` array with only `candidateRefere
   state.
 - Show the Matches Panel on the right side instead of offer Details while search states/results are
   shown.
-- Render candidates in API ranking order, including ranking position, MongoDB-resolved name and
-  email, and estimated matching probability. Insert dynamic values as text, not HTML.
+- Render candidates in API ranking order, including ranking position, LLM-returned name and email,
+  and estimated matching probability. Insert dynamic values as text, not HTML.
 - For an empty successful response, explain that no matching candidates were found and suggest
   reviewing or loosening the job qualifications.
 - On request failure, show a visible error and do not present the search as successful.
 
 ## 6. Data and Trust Boundaries
 
-- Job-offer and resume identity data remain in their existing MongoDB collections.
-- Provide the LLM only retrieved resume evidence and job criteria, with opaque references instead of
-  candidate email addresses or names. The ranker keeps the opaque-reference/email mapping internal.
-- Only accept model references that map to candidates represented by retrieved Vector Store
-  documents. Resolve the frontend-visible identity from MongoDB after model evaluation.
+- Job-offer and resume records remain in their existing MongoDB collections; candidate names and
+  email addresses in matching results are supplied by the LLM based on the retrieved resume data.
+- Provide the LLM the selected job criteria and resume evidence retrieved by
+  `RetrievalAugmentationAdvisor` from the Vector Store.
+- Require returned candidate identities to be supported by retrieved Vector Store evidence; do not
+  add identities from MongoDB or another source after model evaluation.
 - The model's probability is an estimate for ordering/display, not a persisted candidate attribute.
 
 ## 7. Verification Design
 
 The acceptance-criteria evidence is as follows:
 
-- **AC1:** Ranker tests verify offer loading, retrieval-query criteria, configured threshold use,
-  grounded model evaluation, and that the matching service delegates without retrieving evidence.
-- **AC2:** Ranker and service tests verify an empty result and no model invocation when retrieval
-  yields no eligible evidence; browser tests verify the corresponding no-match message.
+- **AC1:** Ranker tests verify offer loading, retrieval-query criteria, Retrieval Augmentation,
+  configured threshold use, and evaluation of all specified candidate factors.
+- **AC2:** Ranker and browser tests verify empty retrieval produces no matches or invented candidate
+  profiles.
 - **AC3:** Service and browser tests verify descending ranking order, one-based positions, and
   matching probabilities in the Matches Panel.
-- **AC4:** Ranker tests verify returned references map only to retrieved evidence; service/controller
-  tests verify candidate names and emails come from MongoDB, not model output.
+- **AC4:** Ranker and browser tests verify candidate names and emails are taken from the LLM
+  response
+  and displayed only for candidates grounded in Vector Store evidence.
 - **AC5:** Chat configuration tests verify the configured readable, non-empty prompt resource is
   used and invalid prompt resources fail clearly.
 
@@ -170,14 +161,12 @@ The acceptance-criteria evidence is as follows:
 - Chat configuration tests verify an injected Spring `Resource` is used as the default UTF-8 system
   prompt, the lowest-precedence logger is configured, and missing/empty prompt resources fail
   clearly.
-- Ranker tests verify offer loading from MongoDB, missing-offer behavior, retrieval query and
-  threshold, evidence grouping and opaque references, no ChatClient call when retrieval is empty,
-  job criteria and retrieved evidence in the request user message, response-reference validation,
-  and malformed model responses.
-- Service tests verify delegation of offer loading and ranking to the ranker, that the service does
-  not query Chroma/Vector Store, MongoDB identity resolution, descending score order, one-based
-  positions, and dependency failures.
+- Ranker tests verify offer loading from MongoDB, missing-offer behavior, retrieval query criteria,
+  `RetrievalAugmentationAdvisor` wiring and threshold, grounded prompt factors, LLM identity fields,
+  probability validation, empty results, and malformed responses.
+- Service tests verify delegation of offer loading and ranking to the ranker, identity/probability
+  validation, descending score order, one-based positions, and dependency failures.
 - Controller/integration tests verify request validation, ranked response fields, empty results,
   missing offers, and dependency error mapping.
 - Browser tests verify selected-offer gating, pending/results/empty/error states, result ordering,
-  rank and probability rendering, and safe rendering of candidate values.
+  rank and probability rendering, LLM-returned candidate values, and safe text rendering.

@@ -51,7 +51,8 @@ public class CandidateMatchingController {
   }
 
   @ExceptionHandler(CandidateMatchingUnavailableException.class)
-  public ResponseEntity<ApiErrorResponse> handleMatchingFailure(CandidateMatchingUnavailableException ex) {
+  public ResponseEntity<ApiErrorResponse> handleMatchingFailure(
+      CandidateMatchingUnavailableException ex) {
     log.error("Candidate matching request failed. Error: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
         .body(
@@ -60,12 +61,11 @@ public class CandidateMatchingController {
   }
 
   @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
-  public ResponseEntity<ApiErrorResponse> handleInvalidRequest(HttpMessageNotReadableException ex) {
+  public ResponseEntity<ApiErrorResponse> handleInvalidRequest(Exception ex) {
     log.error("Candidate matching request failed. Error: {}", ex.getMessage());
     return ResponseEntity.badRequest()
         .body(
-            new ApiErrorResponse(
-                "INVALID_CANDIDATE_MATCH_REQUEST", "A job offer ID is required."));
+            new ApiErrorResponse("INVALID_CANDIDATE_MATCH_REQUEST", "A job offer ID is required."));
   }
 
   private static class CandidateMatchingUnavailableException extends RuntimeException {

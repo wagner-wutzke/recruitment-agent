@@ -6,56 +6,62 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.wowdev.recruitment.agent.entity.JobOffer;
-import net.wowdev.recruitment.agent.entity.ResumeDocument;
-import net.wowdev.recruitment.agent.repository.ResumeRepository;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CandidateMatchingService {
 
-  private final ResumeRepository resumeRepository;
   private final CandidateRanker candidateRanker;
 
-  public CandidateMatchingService(
-      ResumeRepository resumeRepository, CandidateRanker candidateRanker) {
-    this.resumeRepository = resumeRepository;
+  public CandidateMatchingService(CandidateRanker candidateRanker) {
     this.candidateRanker = candidateRanker;
   }
 
   public List<CandidateMatch> findCandidates(String jobOfferId) {
     JobOffer jobOffer = candidateRanker.loadJobOffer(jobOfferId);
-    List<RankedCandidateEmail> rankings = candidateRanker.rank(jobOffer);
+    List<RankedCandidate> rankings = candidateRanker.rank(jobOffer);
     if (rankings == null) {
       throw new IllegalStateException("Candidate matching returned an invalid ranking response.");
     }
     return resolveRankings(rankings);
   }
 
-  private List<CandidateMatch> resolveRankings(List<RankedCandidateEmail> rankings) {
-    Set<String> resolvedEmails = new HashSet<>();
-    List<CandidateMatch> matches = new ArrayList<>();
-    for (RankedCandidateEmail ranking : rankings) {
+  private List<CandidateMatch> resolveRankings(List<RankedCandidate> rankings) {
+    List<RankedCandidate> validRankings = new ArrayList<>();
+    for (RankedCandidate ranking : rankings) {
       if (ranking == null
+          || ranking.candidateName() == null
+          || ranking.candidateName().isBlank()
           || ranking.candidateEmail() == null
           || ranking.candidateEmail().isBlank()) {
         throw new IllegalStateException(
-            "Candidate matching returned an invalid candidate. No email provided.");
+            "Candidate matching returned an invalid candidate identity.");
       }
       validateProbability(ranking.matchingProbability());
-      if (!resolvedEmails.add(ranking.candidateEmail())) {
-        continue;
-      }
-      resumeRepository
-          .findById(ranking.candidateEmail())
-          .map(resume -> toCandidateMatch(resume, ranking.matchingProbability()))
-          .ifPresent(matches::add);
+      validRankings.add(ranking);
     }
-    matches.sort(Comparator.comparingDouble(CandidateMatch::matchingProbability).reversed());
+
+    validRankings.sort(Comparator.comparingDouble(RankedCandidate::matchingProbability).reversed());
+    Set<String> seenEmails = new HashSet<>();
+    List<CandidateMatch> matches = new ArrayList<>();
+    for (RankedCandidate ranking : validRankings) {
+      if (seenEmails.add(ranking.candidateEmail())) {
+        matches.add(
+            new CandidateMatch(
+                ranking.candidateName(),
+                ranking.candidateEmail(),
+                0,
+                ranking.matchingProbability()));
+      }
+    }
     return assignRankingPositions(matches);
   }
 
-  private void validateProbability(double probability) {
-    if (!Double.isFinite(probability) || probability < 0 || probability > 1) {
+  private void validateProbability(Double probability) {
+    if (probability == null
+        || !Double.isFinite(probability)
+        || probability < 0
+        || probability > 1) {
       throw new IllegalStateException("Candidate matching returned an invalid match probability.");
     }
   }
@@ -72,10 +78,5 @@ public class CandidateMatchingService {
               match.matchingProbability()));
     }
     return List.copyOf(positionedMatches);
-  }
-
-  private CandidateMatch toCandidateMatch(ResumeDocument resume, double probability) {
-    return new CandidateMatch(
-        resume.getCandidateName(), resume.getCandidateEmail(), 0, probability);
   }
 }

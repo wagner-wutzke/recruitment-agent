@@ -157,13 +157,13 @@ function displaySearchResults(candidates) {
     email.className = "candidate-email";
     email.textContent = candidate.candidateEmail ?? "";
     const probability = candidate.matchingProbability == null
-      ? Number.NaN
-      : Number(candidate.matchingProbability);
+        ? Number.NaN
+        : Number(candidate.matchingProbability);
     const score = document.createElement("span");
     score.className = "candidate-probability";
     score.textContent = Number.isFinite(probability) && probability >= 0 && probability <= 1
-      ? `Estimated match probability: ${Math.round(probability * 100)}%`
-      : "Estimated match probability unavailable";
+        ? `Estimated match probability: ${Math.round(probability * 100)}%`
+        : "Estimated match probability unavailable";
     item.append(position, name, email, score);
     searchResultsList.append(item);
   });
