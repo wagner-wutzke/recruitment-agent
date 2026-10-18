@@ -51,25 +51,47 @@ class ResumePdfIndexerTest {
   @Test
   void extractsSplitsAndIndexesPdfWithTrackingMetadata() throws IOException {
     UUID documentId = UUID.randomUUID();
-    List<String> ids = indexer.index(
-        pdfWithText("Resume text for local indexing"),
-        "candidate@example.com",
-        documentId,
-        "Ada_Lovelace.pdf");
+    List<String> ids =
+        indexer.index(
+            pdfWithText("Resume text for local indexing candidate@example.com"),
+            documentId,
+            "Ada_Lovelace.pdf");
 
     org.mockito.ArgumentCaptor<List<Document>> documents = org.mockito.ArgumentCaptor.forClass(List.class);
     verify(vectorStore).add(documents.capture());
     assertFalse(ids.isEmpty());
-    assertEquals("candidate@example.com", documents.getValue().getFirst().getMetadata().get("candidateEmail"));
+    assertEquals(
+        "candidate@example.com",
+        documents.getValue().getFirst().getMetadata().get("candidateEmail"));
     assertEquals(documentId.toString(), documents.getValue().getFirst().getMetadata().get("documentId"));
     assertEquals("Ada_Lovelace.pdf", documents.getValue().getFirst().getMetadata().get("fileName"));
+  }
+
+  @Test
+  void extractsFirstEmailInPdfTextOrder() throws IOException {
+    ResumePdfIndexer.PreparedResume prepared =
+        indexer.prepare(
+            pdfWithText("Candidate: first@example.com Reference: other@example.com"),
+            UUID.randomUUID(),
+            "Candidate.pdf");
+
+    assertEquals("first@example.com", prepared.candidateEmail());
+    assertEquals("first@example.com", prepared.documents().getFirst().getMetadata().get("candidateEmail"));
+  }
+
+  @Test
+  void rejectsPdfWithoutValidEmailAddress() throws IOException {
+    assertThrows(
+        InvalidResumePdfException.class,
+        () -> indexer.prepare(pdfWithText("Resume text without contact address"), UUID.randomUUID(), "resume.pdf"));
+    verifyNoInteractions(vectorStore);
   }
 
   @Test
   void rejectsInvalidPdfWithoutIndexing() {
     assertThrows(
         InvalidResumePdfException.class,
-        () -> indexer.index("not a PDF".getBytes(), "candidate@example.com", UUID.randomUUID(), "resume.pdf"));
+        () -> indexer.index("not a PDF".getBytes(), UUID.randomUUID(), "resume.pdf"));
 
     verifyNoInteractions(vectorStore);
   }
@@ -78,7 +100,7 @@ class ResumePdfIndexerTest {
   void rejectsPdfWithoutExtractableText() throws IOException {
     assertThrows(
         InvalidResumePdfException.class,
-        () -> indexer.index(emptyPdf(), "candidate@example.com", UUID.randomUUID(), "resume.pdf"));
+        () -> indexer.index(emptyPdf(), UUID.randomUUID(), "resume.pdf"));
 
     verifyNoInteractions(vectorStore);
   }
@@ -87,7 +109,7 @@ class ResumePdfIndexerTest {
   void rejectsMissingPdf() {
     assertThrows(
         InvalidResumePdfException.class,
-        () -> indexer.index(new byte[0], "candidate@example.com", UUID.randomUUID(), "resume.pdf"));
+        () -> indexer.index(new byte[0], UUID.randomUUID(), "resume.pdf"));
 
     verifyNoInteractions(vectorStore);
   }
@@ -96,7 +118,7 @@ class ResumePdfIndexerTest {
   void rejectsNullPdf() {
     assertThrows(
         InvalidResumePdfException.class,
-        () -> indexer.index(null, "candidate@example.com", UUID.randomUUID(), "resume.pdf"));
+        () -> indexer.index(null, UUID.randomUUID(), "resume.pdf"));
 
     verifyNoInteractions(vectorStore);
   }

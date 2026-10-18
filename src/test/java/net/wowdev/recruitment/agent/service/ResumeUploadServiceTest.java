@@ -42,6 +42,14 @@ class ResumeUploadServiceTest {
   @TempDir Path tempDirectory;
 
   private static byte[] pdfWithText(String text) throws IOException {
+    return pdf(text + " " + EMAIL);
+  }
+
+  private static byte[] pdfWithoutEmail(String text) throws IOException {
+    return pdf(text);
+  }
+
+  private static byte[] pdf(String text) throws IOException {
     try (PDDocument document = new PDDocument(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
       PDPage page = new PDPage();
       document.addPage(page);
@@ -49,7 +57,7 @@ class ResumeUploadServiceTest {
         content.beginText();
         content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
         content.newLineAtOffset(50, 700);
-        content.showText(text);
+        content.showText(text + " " + EMAIL);
         content.endText();
       }
       document.save(output);
@@ -65,6 +73,22 @@ class ResumeUploadServiceTest {
 
   private static ResumePdfIndexer indexer(VectorStore vectorStore) {
     return new ResumePdfIndexer(vectorStore, new ResumeIndexingProperties());
+  }
+
+  @Test
+  void rejectsResumeWithoutEmailBeforeDatabaseOrVectorOperations() throws IOException {
+    ResumeRepository repository = mock(ResumeRepository.class);
+    VectorStore vectorStore = mock(VectorStore.class);
+    ResumeFileStorage fileStorage = new ResumeFileStorage(tempDirectory.resolve("resumes"));
+    ResumeUploadService service =
+        new ResumeUploadService(repository, fileStorage, indexer(vectorStore), vectorStore);
+
+    assertThrows(
+        InvalidResumePdfException.class,
+        () -> service.upload(CANDIDATE_NAME, pdfWithoutEmail("Resume without contact email")));
+
+    verifyNoInteractions(repository, vectorStore);
+    assertFalse(Files.exists(tempDirectory.resolve("resumes/Ada_Lovelace.pdf")));
   }
 
   @Test
@@ -88,15 +112,15 @@ class ResumeUploadServiceTest {
 
     ResumeDocument saved =
         new ResumeUploadService(repository, fileStorage, indexer, vectorStore)
-            .upload(CANDIDATE_NAME, EMAIL, pdfWithText("Updated resume information"))
+            .upload(CANDIDATE_NAME, pdfWithText("Updated resume information"))
             .resume();
 
     assertEquals(EMAIL, saved.getCandidateEmail());
     assertEquals("Ada_Lovelace.pdf", saved.getFileName());
     assertTrue(saved.getUploadDatetime().isAfter(uploadStartedAt));
-    assertEquals(
-        pdfText(Files.readAllBytes(tempDirectory.resolve("resumes/Ada_Lovelace.pdf"))),
-        "Updated resume information");
+    assertTrue(
+        pdfText(Files.readAllBytes(tempDirectory.resolve("resumes/Ada_Lovelace.pdf")))
+            .contains("Updated resume information"));
     InOrder order = inOrder(vectorStore, repository);
     order.verify(vectorStore).add(anyList());
     order.verify(repository).save(org.mockito.ArgumentMatchers.any(ResumeDocument.class));
@@ -129,7 +153,7 @@ class ResumeUploadServiceTest {
 
     assertThrows(
         IllegalStateException.class,
-        () -> service.upload(CANDIDATE_NAME, EMAIL, pdfWithText("New resume information")));
+        () -> service.upload(CANDIDATE_NAME, pdfWithText("New resume information")));
 
     assertEquals(
         "previous PDF", Files.readString(tempDirectory.resolve("resumes/Ada_Lovelace.pdf")));
@@ -149,7 +173,7 @@ class ResumeUploadServiceTest {
 
     assertThrows(
         IllegalStateException.class,
-        () -> service.upload(CANDIDATE_NAME, EMAIL, pdfWithText("New resume information")));
+        () -> service.upload(CANDIDATE_NAME, pdfWithText("New resume information")));
 
     assertEquals(
         "previous PDF", Files.readString(tempDirectory.resolve("resumes/Ada_Lovelace.pdf")));
@@ -179,7 +203,7 @@ class ResumeUploadServiceTest {
 
     ResumeUploadResult result =
         new ResumeUploadService(repository, fileStorage, indexer, vectorStore)
-            .upload(CANDIDATE_NAME, EMAIL, pdfWithText("Replacement resume content"));
+            .upload(CANDIDATE_NAME, pdfWithText("Replacement resume content"));
 
     assertFalse(result.created());
     assertEquals(EMAIL, result.resume().getCandidateEmail());
@@ -201,7 +225,7 @@ class ResumeUploadServiceTest {
     IllegalStateException failure =
         assertThrows(
             IllegalStateException.class,
-            () -> service.upload(CANDIDATE_NAME, EMAIL, pdfWithText("New resume information")));
+            () -> service.upload(CANDIDATE_NAME, pdfWithText("New resume information")));
 
     assertEquals(1, failure.getSuppressed().length);
   }
@@ -218,7 +242,7 @@ class ResumeUploadServiceTest {
 
     assertThrows(
         ResumeStorageException.class,
-        () -> service.upload(CANDIDATE_NAME, EMAIL, pdfWithText("Resume information")));
+        () -> service.upload(CANDIDATE_NAME, pdfWithText("Resume information")));
     verifyNoInteractions(vectorStore);
   }
 

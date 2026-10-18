@@ -32,13 +32,16 @@ public class ResumeUploadService {
     this.vectorStore = vectorStore;
   }
 
-  public ResumeUploadResult upload(String candidateName, String candidateEmail, byte[] pdfBytes) {
-    ResumeDocument previous = resumeRepository.findById(candidateEmail).orElse(null);
+  public ResumeUploadResult upload(String candidateName, byte[] pdfBytes) {
     UUID documentId = UUID.randomUUID();
 
-    try (ResumeFileStorage.StoredFile storedFile = fileStorage.storeForUpload(candidateName, pdfBytes)) {
-      List<Document> documents =
-          pdfIndexer.prepare(pdfBytes, candidateEmail, documentId, storedFile.fileName());
+    try (ResumeFileStorage.StoredFile storedFile =
+        fileStorage.storeForUpload(candidateName, pdfBytes)) {
+      ResumePdfIndexer.PreparedResume prepared =
+          pdfIndexer.prepare(pdfBytes, documentId, storedFile.fileName());
+      String candidateEmail = prepared.candidateEmail();
+      ResumeDocument previous = resumeRepository.findById(candidateEmail).orElse(null);
+      List<Document> documents = prepared.documents();
       List<String> documentIds = documents.stream().map(Document::getId).toList();
       try {
         vectorStore.add(documents);

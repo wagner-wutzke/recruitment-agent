@@ -1,6 +1,6 @@
 # Feature Spec: Upload and Index Resumes
 
-- **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
+- **Status:** [ ] Draft | [ ] Approved for Design | [x] In Implementation | [ ] Completed
 - **Author/Agent:** @architect
 - **Date:** 2026-10-16
 
@@ -17,6 +17,9 @@ JPA, and H2 are not used for resume metadata.
 ## 2. Business Rules
 
 - Candidate email uniquely identifies a resume document and is its MongoDB `_id`.
+- Candidate email is extracted from the uploaded PDF's extractable text; the recruiter does not enter
+  it manually. When multiple email addresses are present, use the first valid address in document
+  order.
 - Uploading a resume for an existing candidate email replaces that document rather than creating a
   second record.
 - Every successful upload has a generated document identifier saved in the MongoDB resume document
@@ -26,14 +29,16 @@ JPA, and H2 are not used for resume metadata.
 ## 3. Functional Requirements
 
 - Add an **Upload Resume** button below the Offers panel.
-- Clicking the button opens a **Resume Data** modal with Candidate Name, Candidate Email, and PDF
-  file controls, plus **Cancel** and **Save** buttons.
-- Save Candidate Name, Candidate Email, the renamed disk file name, server-generated upload
+- Clicking the button opens a **Resume Data** modal with Candidate Name and PDF file controls, plus
+  **Cancel** and **Save** buttons.
+- Extract text from the uploaded PDF and derive the candidate email from the first valid email
+  address in document order. Reject the upload if no valid email address is found.
+- Save Candidate Name, extracted Candidate Email, renamed disk file name, server-generated upload
   datetime, and document identifier in a MongoDB document in the `resumes` collection. Candidate
   Email is the document `_id`.
-- If Candidate Email already exists, replace its metadata and indexed resume content.
-- Extract text from the uploaded PDF, transform it into vector documents, generate embeddings
-  locally, and store the vector documents in the local ChromaDB service.
+- If the extracted Candidate Email already exists, replace its metadata and indexed resume content.
+- Transform extracted PDF text into vector documents, generate embeddings locally, and store the
+  vector documents in the local ChromaDB service.
 - Configure the text splitter through Spring properties under `resume.indexing`:
   `chunk-size` (default `800`), `min-chunk-size-chars` (default `350`),
   `min-chunk-length-to-embed` (default `20`), `max-num-chunks` (default `10000`), and
@@ -66,17 +71,19 @@ These scenarios must be validated by the `@reviewer`.
 
 - **Given** the recruiter is viewing the Job Offers page
 - **When** they select **Upload Resume**
-- **Then** the **Resume Data** modal displays Candidate Name, Candidate Email, and PDF file
-  controls, plus **Cancel** and **Save** buttons.
+- **Then** the **Resume Data** modal displays Candidate Name and PDF file controls, plus **Cancel**
+  and **Save** buttons.
+- **And** the form does not request Candidate Email.
 - **When** they select **Cancel** without saving
 - **Then** the modal closes without creating or changing a resume document.
 
 ### Scenario 2: Save a new resume
 
-- **Given** the recruiter enters a candidate name and email and selects a readable PDF
+- **Given** the recruiter enters a candidate name and selects a readable PDF containing a valid
+  candidate email address
 - **When** they select **Save** and processing succeeds
-- **Then** one MongoDB document is saved in `resumes` with the submitted name and email, renamed
-  disk file name, server-generated upload time, and generated document identifier.
+- **Then** one MongoDB document is saved in `resumes` with the submitted name, email extracted from
+  the PDF, renamed disk file name, server-generated upload time, and generated document identifier.
 - **And** extracted resume text is embedded locally and stored in ChromaDB.
 - **And** the document identifier saved in MongoDB identifies the indexed resume content.
 - **And** the modal closes after success.
@@ -84,15 +91,15 @@ These scenarios must be validated by the `@reviewer`.
 ### Scenario 3: Replace a resume for an existing candidate
 
 - **Given** a resume document and indexed content already exist for a candidate email
-- **When** another readable PDF is saved using the same email
+- **When** another readable PDF containing that same email is saved
 - **Then** the existing `resumes` document is replaced with the new name, file name, upload time,
   and document identifier, with no second document created for that email.
 - **And** the candidate's previous indexed content is replaced with content from the new PDF.
 
 ### Scenario 4: Reject incomplete or unreadable submissions
 
-- **Given** Candidate Name, Candidate Email, or PDF file is missing, or the selected file cannot be
-  parsed as a PDF with extractable text
+- **Given** Candidate Name or PDF file is missing, the selected file cannot be parsed as a PDF with
+  extractable text, or the PDF contains no valid email address
 - **When** the recruiter selects **Save**
 - **Then** the submission is rejected with a visible error and no successful-save state is shown.
 
@@ -132,6 +139,7 @@ These scenarios must be validated by the `@reviewer`.
 - Failure to retain the uploaded file: show a save error and do not show success.
 - Invalid or unreadable PDF: reject the request and show an upload error.
 - No extractable text: reject the request and show an upload error; OCR is not attempted.
+- No valid email address in the extracted PDF text: reject the request and show an upload error.
 - MongoDB or ChromaDB failure: show a save error and do not show success.
 - Failure to read a retained PDF: show a download error; do not expose a filesystem path.
 

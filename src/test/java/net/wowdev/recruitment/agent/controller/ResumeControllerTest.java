@@ -44,8 +44,7 @@ class ResumeControllerTest {
       validMultipart() {
     return multipart("/api/resumes")
         .file(pdfFile())
-        .param("candidateName", NAME)
-        .param("candidateEmail", EMAIL);
+        .param("candidateName", NAME);
   }
 
   private static MockMultipartFile pdfFile() {
@@ -61,7 +60,7 @@ class ResumeControllerTest {
   void createsResumeAndReturnsSavedMetadata() throws Exception {
     UUID id = UUID.randomUUID();
     Instant uploadedAt = Instant.parse("2026-10-16T10:00:00Z");
-    when(uploadService.upload(eq(NAME), eq(EMAIL), any()))
+    when(uploadService.upload(eq(NAME), any()))
         .thenReturn(
             new ResumeUploadResult(
                 new ResumeDocument(EMAIL, NAME, "Ada_Lovelace.pdf", uploadedAt, id), true));
@@ -75,12 +74,12 @@ class ResumeControllerTest {
         .andExpect(jsonPath("$.uploadDatetime").value("2026-10-16T10:00:00Z"))
         .andExpect(jsonPath("$.documentId").value(id.toString()));
 
-    verify(uploadService).upload(eq(NAME), eq(EMAIL), any());
+    verify(uploadService).upload(eq(NAME), any());
   }
 
   @Test
   void updatesExistingResumeWithOkStatus() throws Exception {
-    when(uploadService.upload(eq(NAME), eq(EMAIL), any()))
+    when(uploadService.upload(eq(NAME), any()))
         .thenReturn(
             new ResumeUploadResult(
                 new ResumeDocument(
@@ -95,23 +94,9 @@ class ResumeControllerTest {
   }
 
   @Test
-  void rejectsMissingCandidateEmail() throws Exception {
-    mockMvc
-        .perform(
-            multipart("/api/resumes")
-                .file(pdfFile())
-                .param("candidateName", NAME))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("INVALID_RESUME_UPLOAD"));
-  }
-
-  @Test
   void rejectsMissingCandidateName() throws Exception {
     mockMvc
-        .perform(
-            multipart("/api/resumes")
-                .file(pdfFile())
-                .param("candidateEmail", EMAIL))
+        .perform(multipart("/api/resumes").file(pdfFile()))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("INVALID_RESUME_UPLOAD"));
   }
@@ -119,7 +104,7 @@ class ResumeControllerTest {
   @Test
   void rejectsMissingFile() throws Exception {
     mockMvc
-        .perform(multipart("/api/resumes").param("candidateName", NAME).param("candidateEmail", EMAIL))
+        .perform(multipart("/api/resumes").param("candidateName", NAME))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("INVALID_RESUME_UPLOAD"));
   }
@@ -130,29 +115,20 @@ class ResumeControllerTest {
         .perform(
             multipart("/api/resumes")
                 .file(pdfFile())
-                .param("candidateName", " ")
-                .param("candidateEmail", EMAIL))
-        .andExpect(status().isBadRequest());
-    mockMvc
-        .perform(
-            multipart("/api/resumes")
-                .file(pdfFile())
-                .param("candidateName", NAME)
-                .param("candidateEmail", " "))
+                .param("candidateName", " "))
         .andExpect(status().isBadRequest());
     mockMvc
         .perform(
             multipart("/api/resumes")
                 .file(new MockMultipartFile("file", "resume.pdf", "application/pdf", new byte[0]))
-                .param("candidateName", NAME)
-                .param("candidateEmail", EMAIL))
+                .param("candidateName", NAME))
         .andExpect(status().isBadRequest());
-    verify(uploadService, never()).upload(eq(NAME), eq(EMAIL), any());
+    verify(uploadService, never()).upload(eq(NAME), any());
   }
 
   @Test
   void rejectsUnreadablePdf() throws Exception {
-    when(uploadService.upload(eq(NAME), eq(EMAIL), any()))
+    when(uploadService.upload(eq(NAME), any()))
         .thenThrow(new InvalidResumePdfException("Unable to read PDF"));
 
     mockMvc
@@ -175,15 +151,14 @@ class ResumeControllerTest {
         .perform(
             multipart("/api/resumes")
                 .file(unreadableFile)
-                .param("candidateName", NAME)
-                .param("candidateEmail", EMAIL))
+                .param("candidateName", NAME))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("INVALID_RESUME_UPLOAD"));
   }
 
   @Test
   void returnsServiceUnavailableWhenIndexOrPersistenceFails() throws Exception {
-    when(uploadService.upload(eq(NAME), eq(EMAIL), any()))
+    when(uploadService.upload(eq(NAME), any()))
         .thenThrow(new IllegalStateException("dependency unavailable"));
 
     mockMvc
@@ -194,7 +169,7 @@ class ResumeControllerTest {
 
   @Test
   void returnsServiceUnavailableWhenResumeFileStorageFails() throws Exception {
-    when(uploadService.upload(eq(NAME), eq(EMAIL), any()))
+    when(uploadService.upload(eq(NAME), any()))
         .thenThrow(new ResumeStorageException("write failed", new IOException("disk full")));
 
     mockMvc
