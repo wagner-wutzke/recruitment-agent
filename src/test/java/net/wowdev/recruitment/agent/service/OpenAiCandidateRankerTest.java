@@ -117,6 +117,7 @@ class OpenAiCandidateRankerTest {
         .thenReturn(List.of(mock(Document.class)));
     DocumentRetriever retriever =
         (DocumentRetriever) ReflectionTestUtils.getField(retrievalAdvisor, "documentRetriever");
+    assert retriever != null;
     retriever.retrieve(new Query(query.getValue()));
     ArgumentCaptor<SearchRequest> searchRequest = ArgumentCaptor.forClass(SearchRequest.class);
     verify(vectorStore).similaritySearch(searchRequest.capture());

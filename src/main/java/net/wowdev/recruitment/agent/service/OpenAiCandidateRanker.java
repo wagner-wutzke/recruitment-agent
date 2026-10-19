@@ -1,6 +1,5 @@
 package net.wowdev.recruitment.agent.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -8,19 +7,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import lombok.extern.slf4j.Slf4j;
 import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.repository.JobOfferRepository;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
-@Slf4j
 @Service
 public class OpenAiCandidateRanker implements CandidateRanker {
 
