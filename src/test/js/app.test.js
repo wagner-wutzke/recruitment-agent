@@ -149,51 +149,53 @@ test("searches the selected job offer and displays matching candidates safely", 
   dom.window.close();
 });
 
-test("renders multiple API matches in returned ranking order with their own identity and probability", async () => {
-  const candidates = [
-    {
-      candidateName: "Grace Hopper",
-      candidateEmail: "grace+hopper@example.com",
-      rankingPosition: 1,
-      matchingProbability: 0.94,
-      matchedSkills: ["COBOL"],
-      relevantWorkExperiences: ["Built compilers."],
-    },
-    {
-      candidateName: "Ada Lovelace",
-      candidateEmail: "ada@example.com",
-      rankingPosition: 2,
-      matchingProbability: 0.81,
-      matchedSkills: ["Java"],
-      relevantWorkExperiences: ["Built analytical systems."],
-    },
-  ];
-  const dom = await loadPage(async (url, options) =>
-    options ? response(candidates) : response([offer]));
-  const {document} = dom.window;
-  document.querySelector(".offer-button").click();
-  document.querySelector("#find-candidates").click();
-  await new Promise((resolve) => setImmediate(resolve));
+test(
+    "renders multiple API matches in returned ranking order with their own identity and probability",
+    async () => {
+      const candidates = [
+        {
+          candidateName: "Grace Hopper",
+          candidateEmail: "grace+hopper@example.com",
+          rankingPosition: 1,
+          matchingProbability: 0.94,
+          matchedSkills: ["COBOL"],
+          relevantWorkExperiences: ["Built compilers."],
+        },
+        {
+          candidateName: "Ada Lovelace",
+          candidateEmail: "ada@example.com",
+          rankingPosition: 2,
+          matchingProbability: 0.81,
+          matchedSkills: ["Java"],
+          relevantWorkExperiences: ["Built analytical systems."],
+        },
+      ];
+      const dom = await loadPage(async (url, options) =>
+          options ? response(candidates) : response([offer]));
+      const {document} = dom.window;
+      document.querySelector(".offer-button").click();
+      document.querySelector("#find-candidates").click();
+      await new Promise((resolve) => setImmediate(resolve));
 
-  const matches = [...document.querySelectorAll(".candidate-match")];
-  assert.equal(matches.length, 2);
-  assert.equal(matches[0].querySelector(".candidate-position").textContent, "#1");
-  assert.equal(matches[0].querySelector("strong").textContent, "Grace Hopper");
-  assert.equal(matches[0].querySelector(".candidate-email").textContent,
-      "grace+hopper@example.com");
-  assert.equal(matches[0].querySelector(".candidate-probability").textContent,
-      "Estimated match probability: 94%");
-  assert.equal(matches[0].querySelector(".candidate-resume-link").getAttribute("href"),
-      "/api/resumes/grace%2Bhopper%40example.com/file");
-  assert.equal(matches[1].querySelector(".candidate-position").textContent, "#2");
-  assert.equal(matches[1].querySelector("strong").textContent, "Ada Lovelace");
-  assert.equal(matches[1].querySelector(".candidate-email").textContent, "ada@example.com");
-  assert.equal(matches[1].querySelector(".candidate-probability").textContent,
-      "Estimated match probability: 81%");
-  assert.equal(matches[1].querySelector(".candidate-resume-link").getAttribute("href"),
-      "/api/resumes/ada%40example.com/file");
-  dom.window.close();
-});
+      const matches = [...document.querySelectorAll(".candidate-match")];
+      assert.equal(matches.length, 2);
+      assert.equal(matches[0].querySelector(".candidate-position").textContent, "#1");
+      assert.equal(matches[0].querySelector("strong").textContent, "Grace Hopper");
+      assert.equal(matches[0].querySelector(".candidate-email").textContent,
+          "grace+hopper@example.com");
+      assert.equal(matches[0].querySelector(".candidate-probability").textContent,
+          "Estimated match probability: 94%");
+      assert.equal(matches[0].querySelector(".candidate-resume-link").getAttribute("href"),
+          "/api/resumes/grace%2Bhopper%40example.com/file");
+      assert.equal(matches[1].querySelector(".candidate-position").textContent, "#2");
+      assert.equal(matches[1].querySelector("strong").textContent, "Ada Lovelace");
+      assert.equal(matches[1].querySelector(".candidate-email").textContent, "ada@example.com");
+      assert.equal(matches[1].querySelector(".candidate-probability").textContent,
+          "Estimated match probability: 81%");
+      assert.equal(matches[1].querySelector(".candidate-resume-link").getAttribute("href"),
+          "/api/resumes/ada%40example.com/file");
+      dom.window.close();
+    });
 
 test("defines an accessible explanation modal with explicit close-only policy", async () => {
   const dom = await loadPage(async () => response([offer]));
@@ -212,59 +214,64 @@ test("defines an accessible explanation modal with explicit close-only policy", 
   dom.window.close();
 });
 
-test("shows each candidate's explanation as text and preserves matches when the modal closes", async () => {
-  const candidates = [
-    {
-      candidateName: "Ada Lovelace",
-      candidateEmail: "ada@example.com",
-      rankingPosition: 1,
-      matchingProbability: 0.91,
-      matchedSkills: ["<img src=x onerror=alert(1)>", "Java"],
-      relevantWorkExperiences: ["Built backend services."],
-    },
-    {
-      candidateName: "Grace Hopper",
-      candidateEmail: "grace@example.com",
-      rankingPosition: 2,
-      matchingProbability: 0.82,
-      matchedSkills: [],
-      relevantWorkExperiences: ["Led compiler development."],
-    },
-  ];
-  const dom = await loadPage(async (url, options) =>
-    options ? response(candidates) : response([offer]));
-  const {document} = dom.window;
-  document.querySelector(".offer-button").click();
-  document.querySelector("#find-candidates").click();
-  await new Promise((resolve) => setImmediate(resolve));
+test("shows each candidate's explanation as text and preserves matches when the modal closes",
+    async () => {
+      const candidates = [
+        {
+          candidateName: "Ada Lovelace",
+          candidateEmail: "ada@example.com",
+          rankingPosition: 1,
+          matchingProbability: 0.91,
+          matchedSkills: ["<img src=x onerror=alert(1)>", "Java"],
+          relevantWorkExperiences: ["Built backend services."],
+        },
+        {
+          candidateName: "Grace Hopper",
+          candidateEmail: "grace@example.com",
+          rankingPosition: 2,
+          matchingProbability: 0.82,
+          matchedSkills: [],
+          relevantWorkExperiences: ["Led compiler development."],
+        },
+      ];
+      const dom = await loadPage(async (url, options) =>
+          options ? response(candidates) : response([offer]));
+      const {document} = dom.window;
+      document.querySelector(".offer-button").click();
+      document.querySelector("#find-candidates").click();
+      await new Promise((resolve) => setImmediate(resolve));
 
-  document.querySelectorAll(".candidate-explanations-link")[0].click();
-  assert.equal(document.querySelector("#candidate-explanation-modal").classList.contains("show"),
-      true);
-  assert.equal(document.querySelector("#candidate-explanation-title").textContent, "Ada Lovelace");
-  assert.equal(document.querySelector("#candidate-explanation-probability").textContent,
-      "Estimated match probability: 91%");
-  assert.equal(document.querySelector("#matched-skills-list img"), null);
-  assert.equal(document.querySelector("#matched-skills-list").textContent,
-      "<img src=x onerror=alert(1)>Java");
-  assert.equal(document.querySelector("#relevant-experiences-list").textContent,
-      "Built backend services.");
+      document.querySelectorAll(".candidate-explanations-link")[0].click();
+      assert.equal(
+          document.querySelector("#candidate-explanation-modal").classList.contains("show"),
+          true);
+      assert.equal(document.querySelector("#candidate-explanation-title").textContent,
+          "Ada Lovelace");
+      assert.equal(document.querySelector("#candidate-explanation-probability").textContent,
+          "Estimated match probability: 91%");
+      assert.equal(document.querySelector("#matched-skills-list img"), null);
+      assert.equal(document.querySelector("#matched-skills-list").textContent,
+          "<img src=x onerror=alert(1)>Java");
+      assert.equal(document.querySelector("#relevant-experiences-list").textContent,
+          "Built backend services.");
 
-  document.querySelector("#candidate-explanation-close").click();
-  assert.equal(document.querySelector("#candidate-explanation-modal").classList.contains("show"),
-      false);
-  assert.equal(document.querySelectorAll(".candidate-match").length, 2);
+      document.querySelector("#candidate-explanation-close").click();
+      assert.equal(
+          document.querySelector("#candidate-explanation-modal").classList.contains("show"),
+          false);
+      assert.equal(document.querySelectorAll(".candidate-match").length, 2);
 
-  document.querySelectorAll(".candidate-explanations-link")[1].click();
-  assert.equal(document.querySelector("#candidate-explanation-title").textContent, "Grace Hopper");
-  assert.equal(document.querySelector("#candidate-explanation-probability").textContent,
-      "Estimated match probability: 82%");
-  assert.equal(document.querySelector("#matched-skills-list").textContent,
-      "No supporting evidence identified.");
-  assert.equal(document.querySelector("#relevant-experiences-list").textContent,
-      "Led compiler development.");
-  dom.window.close();
-});
+      document.querySelectorAll(".candidate-explanations-link")[1].click();
+      assert.equal(document.querySelector("#candidate-explanation-title").textContent,
+          "Grace Hopper");
+      assert.equal(document.querySelector("#candidate-explanation-probability").textContent,
+          "Estimated match probability: 82%");
+      assert.equal(document.querySelector("#matched-skills-list").textContent,
+          "No supporting evidence identified.");
+      assert.equal(document.querySelector("#relevant-experiences-list").textContent,
+          "Led compiler development.");
+      dom.window.close();
+    });
 
 test("does not display explanations returned for an offer that is no longer selected", async () => {
   const secondOffer = {...offer, id: "offer-2", jobName: "Data Engineer"};

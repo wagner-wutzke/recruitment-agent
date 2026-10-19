@@ -56,8 +56,7 @@ class CandidateMatchingControllerTest {
         .andExpect(jsonPath("$[0].matchingProbability").value(0.91))
         .andExpect(jsonPath("$[0].matchedSkills[0]").value("Java"))
         .andExpect(jsonPath("$[0].matchedSkills[1]").value("Spring Boot"))
-        .andExpect(
-            jsonPath("$[0].relevantWorkExperiences[0]").value("Built backend services."));
+        .andExpect(jsonPath("$[0].relevantWorkExperiences[0]").value("Built backend services."));
 
     verify(candidateMatchingService).findCandidates(eq("offer-1"));
   }

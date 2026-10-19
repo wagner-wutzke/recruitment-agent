@@ -11,7 +11,8 @@
   existing `GET /api/resumes/{candidateEmail}/file` endpoint. Encode the candidate email as a URL
   path segment and verify per-candidate association, stacked placement, and icon accessibility in
   browser tests. Evidence: browser assertions verify each candidate's URL, including a `+` address
-  character encoded as `%2B`, link placement beneath Explanations, accessible labeling, and icon CSS;
+  character encoded as `%2B`, link placement beneath Explanations, accessible labeling, and icon
+  CSS;
   `npm test` passes all 25 tests and `git diff --check` is clean. No backend endpoint or storage
   path was added.
 
@@ -22,7 +23,8 @@
   and `[0,1]` probability fields. Add focused tests for Jackson/model mapping. Evidence:
   `OpenAiCandidateRankerTest.mapsExplanationFieldsFromStructuredJsonResponse` maps both explanation
   arrays and existing fields; `mvn -q -Dtest=OpenAiCandidateRankerTest test` passes.
-- [x] **Task 1.2:** Update the configured candidate-ranking prompt to request grounded matched skills
+- [x] **Task 1.2:** Update the configured candidate-ranking prompt to request grounded matched
+  skills
   and relevant work experiences, require empty arrays where retrieved evidence does not support
   content, and retain the untrusted-source and no-invention instructions. Evidence: prompt tests
   `CandidateMatchingChatConfigurationTest.acceptsConfiguredClasspathPromptResource` asserts the
@@ -30,7 +32,8 @@
   -Dtest=CandidateMatchingChatConfigurationTest test` passes.
 - [x] **Task 1.3:** Validate that each candidate ranking response has non-null explanation arrays
   while allowing empty arrays; preserve current identity and probability validation. Evidence:
-  ranker tests cover null/missing arrays, empty arrays, and valid populated arrays; malformed results
+  ranker tests cover null/missing arrays, empty arrays, and valid populated arrays; malformed
+  results
   follow the existing matching failure path. `OpenAiCandidateRankerTest` covers null arrays,
   empty and populated arrays; `mvn -q -Dtest=OpenAiCandidateRankerTest test` passes.
 
@@ -40,7 +43,8 @@
   fields. Update mapping so the matching service preserves each candidate's arrays through
   descending-probability sorting, duplicate-email removal, and one-based position assignment.
   Evidence: service and DTO tests verify fields stay with the correct candidate and existing order,
-  deduplication, positions, and probability behavior remain unchanged. `CandidateMatchingServiceTest`
+  deduplication, positions, and probability behavior remain unchanged.
+  `CandidateMatchingServiceTest`
   and `CandidateMatchDtoMappingTest` pass via `mvn -q
   -Dtest=CandidateMatchingServiceTest,CandidateMatchDtoMappingTest test`.
 - [x] **Task 2.2:** Verify the existing `POST /api/candidate-matches` contract returns both
@@ -55,19 +59,23 @@
   the **Explanations** control at upper right on the same row, candidate name/email in the center,
   and estimated match probability on the right side. Remove the visible **Matches Panel** heading
   while keeping an accessible name for the results section without adding a visible replacement
-  heading. Evidence: browser tests verify values, placement hooks, no visible heading, and accessible
+  heading. Evidence: browser tests verify values, placement hooks, no visible heading, and
+  accessible
   region naming. `npm test` passes all 21 tests.
-- [x] **Task 3.2:** Add the explanation modal markup and styles using the existing Bootstrap version.
+- [x] **Task 3.2:** Add the explanation modal markup and styles using the existing Bootstrap
+  version.
   Include a candidate-specific title, match probability, matched-skills section, relevant-work-
   experiences section, and labelled explicit close control. Configure the existing modal policy:
   close via the explicit control, not Escape or backdrop. Evidence: browser tests verify modal
   structure, accessible labels, and close behavior. `npm test` passes all 22 tests.
-- [x] **Task 3.3:** Wire each **Explanations** control to the explanation fields on its own candidate
+- [x] **Task 3.3:** Wire each **Explanations** control to the explanation fields on its own
+  candidate
   result; render all model-provided content with `textContent` or text nodes. Show the agreed empty
   state for empty explanation arrays, keep results intact after modal close, and clear results when
   another offer is selected. Preserve the selected-offer response guard against stale results.
   Evidence: browser tests cover candidate isolation, literal rendering of markup-like strings,
-  empty arrays, close/list preservation, and stale-response behavior. `npm test` passes all 24 tests.
+  empty arrays, close/list preservation, and stale-response behavior. `npm test` passes all 24
+  tests.
 - [x] **Task 3.4:** Make the match block layout responsive so its ranking/control row, identity,
   probability, and explanation access do not overlap or disappear on narrow viewports. Evidence:
   browser layout checks at representative desktop and narrow viewport sizes verify all fields and

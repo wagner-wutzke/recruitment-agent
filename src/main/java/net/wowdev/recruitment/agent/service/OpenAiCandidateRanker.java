@@ -70,8 +70,7 @@ public class OpenAiCandidateRanker implements CandidateRanker {
           || candidate.candidateEmail().isBlank()
           || candidate.matchedSkills() == null
           || candidate.relevantWorkExperiences() == null) {
-        throw new IllegalStateException(
-            "Candidate matching returned an invalid candidate result.");
+        throw new IllegalStateException("Candidate matching returned an invalid candidate result.");
       }
       validateProbability(candidate.matchingProbability());
     }
@@ -108,7 +107,8 @@ public class OpenAiCandidateRanker implements CandidateRanker {
     criteria.put("location", offer.location());
     criteria.put("workingMode", offer.allocation());
     try {
-      String criteriaString = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(criteria);
+      String criteriaString =
+          objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(criteria);
       String userPrompt = this.userPrompt.getContentAsString(StandardCharsets.UTF_8);
       return userPrompt + "\nJOB CRITERIA JSON:\n" + criteriaString;
     } catch (IOException e) {

@@ -171,7 +171,8 @@ offer.
 
 - **Given** the candidate matching process has returned a candidate with a stored PDF resume
 - **When** the matching results are displayed
-- **Then** the candidate match block must show a PDF icon link immediately below its **Explanations**
+- **Then** the candidate match block must show a PDF icon link immediately below its **Explanations
+  **
   link.
 - **And** activating the link must request the existing resume-download route for that candidate's
   email address.

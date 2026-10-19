@@ -114,8 +114,10 @@ database collection, or database migration.
 ## 4. Frontend Behavior
 
 - Preserve the existing offer-selection gate, pending, empty-result, and request-error states.
-- In each candidate block, keep the ranking position at the upper left and stack the **Explanations**
-  control and a PDF-icon resume link at the upper right. Display candidate name and email in the center content
+- In each candidate block, keep the ranking position at the upper left and stack the **Explanations
+  **
+  control and a PDF-icon resume link at the upper right. Display candidate name and email in the
+  center content
   area; place the existing estimated match probability at the right side of the block. On narrow
   screens, allow the block contents to wrap without hiding or overlapping controls.
 - Remove the visible **Matches Panel** heading while retaining a useful accessible name for the

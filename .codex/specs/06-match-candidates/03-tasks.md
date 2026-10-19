@@ -22,7 +22,8 @@
   passes.
 - [x] **Task 2.2:** Group retrieved chunks by candidate email, invoke the configured chat model with
   only grounded candidate evidence, validate/rank returned references, and resolve candidate
-  identity through MongoDB; test profile-factor prompt coverage, ranking, deduplication, hallucinated
+  identity through MongoDB; test profile-factor prompt coverage, ranking, deduplication,
+  hallucinated
   references, and failures (**AC1, AC4**). Evidence: `CandidateMatchingServiceTest` verifies grouped
   Vector Store chunks, model-ranked Mongo identities, deduplicated/unknown references, empty-hit
   no-call behavior, and model/Mongo failures. `OpenAiCandidateRankerTest` verifies the prompt's
@@ -52,7 +53,8 @@
   model references are validated against retrieved candidates, and returned identities are resolved
   from MongoDB. Empty retrieval skips the model call, and the no-match UI suggests reviewing or
   loosening qualifications.
-- **Acceptance-criteria coverage:** AC1 is covered by retrieval-query/threshold tests, profile-factor
+- **Acceptance-criteria coverage:** AC1 is covered by retrieval-query/threshold tests,
+  profile-factor
   prompt tests, ranked and grounded service results, and the local-Chroma API integration with
   mocked ranking. AC2 is covered by property default/override/range tests and application startup.
   AC4 is covered by the no-hit/no-ranker service test and no-match jsdom test. Matching API error

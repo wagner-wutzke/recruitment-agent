@@ -16,13 +16,15 @@
 
 - [x] **Task 2.1:** Retain PDFs using the safe candidate-name filename rule and MongoDB metadata;
   test rollback, collisions, and filesystem errors (**AC2–5**).
-- [x] **Task 2.2:** Add `GET /api/resumes/{candidateEmail}/file` with attachment headers, 404 behavior,
+- [x] **Task 2.2:** Add `GET /api/resumes/{candidateEmail}/file` with attachment headers, 404
+  behavior,
   safe path resolution, and controller/service tests (**AC7**).
 
 ## Phase 3: Local PDF Indexing
 
 - [x] **Task 3.1:** Configure Chroma and local ONNX embeddings with the local service endpoint.
-- [x] **Task 3.2:** Verify PDF extraction, configurable text splitting, per-chunk metadata, indexing,
+- [x] **Task 3.2:** Verify PDF extraction, configurable text splitting, per-chunk metadata,
+  indexing,
   and invalid or empty PDF handling (**AC2, AC4, AC6, AC8**).
 - [x] **Task 3.3:** Orchestrate create/replacement by candidate email across MongoDB, files, and
   Chroma, including failure compensation (**AC2–5**).

@@ -17,7 +17,8 @@ JPA, and H2 are not used for resume metadata.
 ## 2. Business Rules
 
 - Candidate email uniquely identifies a resume document and is its MongoDB `_id`.
-- Candidate email is extracted from the uploaded PDF's extractable text; the recruiter does not enter
+- Candidate email is extracted from the uploaded PDF's extractable text; the recruiter does not
+  enter
   it manually. When multiple email addresses are present, use the first valid address in document
   order.
 - Uploading a resume for an existing candidate email replaces that document rather than creating a

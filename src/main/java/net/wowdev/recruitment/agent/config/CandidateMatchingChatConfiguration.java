@@ -33,8 +33,7 @@ public class CandidateMatchingChatConfiguration {
       }
     } catch (IOException exception) {
       throw new IllegalStateException(
-          "Could not read candidate matching system prompt file: "
-              + systemPrompt.getDescription(),
+          "Could not read candidate matching system prompt file: " + systemPrompt.getDescription(),
           exception);
     }
   }

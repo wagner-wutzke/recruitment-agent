@@ -29,7 +29,8 @@ system database. The initial version supports one active job position at a time.
   saving. A custom confirmation prompt is to be displayed, before discarding unsaved changes.
 - [ ] Item 6: All form fields are required. If the recruiter clicks **Save** while any required
   field is empty, do not save the job offer. Highlight each empty field with a red border and show
-  an accessible indication that the field is required. Validation error appear only after clicking **Save**.
+  an accessible indication that the field is required. Validation error appear only after clicking *
+  *Save**.
 - [ ] Item 7: Clicking **Edit** opens the same modal with the selected job offer’s existing values
   loaded into the form. The recruiter can change those values and save the changes.
 - [ ] Item 8: After a successful save, close the modal.
@@ -48,6 +49,7 @@ system database. The initial version supports one active job position at a time.
 - Nothing to describe now.
 
 ## 3. Business Rules
+
 Nothing to declare.
 
 ## 4. Acceptance Criteria

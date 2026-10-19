@@ -23,13 +23,13 @@
 
 Map `ResumeDocument` to the `resumes` collection:
 
-| Field            | Java type | Mongo field      | Constraint                       |
-|------------------|-----------|------------------|----------------------------------|
+| Field            | Java type | Mongo field      | Constraint                        |
+|------------------|-----------|------------------|-----------------------------------|
 | `candidateEmail` | `String`  | `_id`            | Required; extracted from PDF text |
-| `candidateName`  | `String`  | `candidateName`  | Required                         |
-| `fileName`       | `String`  | `fileName`       | Required, safe retained filename |
-| `uploadDatetime` | `Instant` | `uploadDatetime` | Required, set by server in UTC   |
-| `documentId`     | `String`  | `documentId`     | Required, generated UUID string  |
+| `candidateName`  | `String`  | `candidateName`  | Required                          |
+| `fileName`       | `String`  | `fileName`       | Required, safe retained filename  |
+| `uploadDatetime` | `Instant` | `uploadDatetime` | Required, set by server in UTC    |
+| `documentId`     | `String`  | `documentId`     | Required, generated UUID string   |
 
 Use `MongoRepository<ResumeDocument, String>`. Saving a document with an existing candidate email
 replaces that candidate's metadata while retaining the same `_id`.

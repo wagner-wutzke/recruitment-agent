@@ -17,7 +17,8 @@
 - [x] **Task 1.1:** Configure `CandidateMatchingChatConfiguration` to load the configured prompt as
   a UTF-8 Spring `Resource`, reject unreadable or empty prompt files, and install the system prompt
   plus `SimpleLoggerAdvisor` at `Ordered.LOWEST_PRECEDENCE`. Keep Vector Store/advisor wiring out of
-  the default ChatClient. Add configuration tests. Evidence: `CandidateMatchingChatConfigurationTest`
+  the default ChatClient. Add configuration tests. Evidence:
+  `CandidateMatchingChatConfigurationTest`
   covers classpath/filesystem prompts, invalid resources, and the default logger-only advisor.
 - [x] **Task 1.2:** Bind and validate `candidate.matching.model` and
   `candidate.matching.similarity-threshold`; preserve defaults `gpt-6-luna` and `0.6`, property
@@ -36,8 +37,10 @@
   `OpenAiCandidateRanker`; preserve missing-offer behavior. Add/retain ranker tests for found and
   missing offers. Evidence: `loadsSelectedOfferFromMongoAndRejectsUnknownOffers` passes.
 - [x] **Task 2.2:** Construct one ranker-owned Spring AI retrieval advisor, backed by the local
-  `VectorStore` and configured inclusive similarity threshold; reuse and attach that instance to each
-  ranking request. Spring AI 2.0.1's `QuestionAnswerAdvisor` resets its `SearchRequest` while building
+  `VectorStore` and configured inclusive similarity threshold; reuse and attach that instance to
+  each
+  ranking request. Spring AI 2.0.1's `QuestionAnswerAdvisor` resets its `SearchRequest` while
+  building
   each retrieval call, discarding the configured threshold. Use the supported
   `RetrievalAugmentationAdvisor`/`VectorStoreDocumentRetriever` API, which preserves the threshold.
   Do not install retrieval on the default ChatClient. Evidence: ranker tests verify advisor type,
@@ -45,7 +48,8 @@
 - [x] **Task 2.3:** Build the request query from job position/name, description, required
   qualifications, responsibilities, and nice-to-have criteria. Ground the model request in advisor-
   retrieved resume evidence and ensure the model evaluates position, technical skills, country,
-  city, working mode, and professional experience. Evidence: `attachesRequestRetrievalAdvisorAndSubmitsOfferCriteria`
+  city, working mode, and professional experience. Evidence:
+  `attachesRequestRetrievalAdvisorAndSubmitsOfferCriteria`
   verifies the job fields and evaluation factors.
 - [x] **Task 2.4:** Ensure retrieval with no eligible resume evidence produces an empty ranking and
   no invented candidates. Evidence: ranker tests verify empty retrieval rejection and empty result;
@@ -77,13 +81,16 @@
   state in the Matches Panel and replace Details during search. Render API matches in ranking order
   with position, model-returned name/email, and probability using safe text insertion. Evidence:
   browser tests cover gating, pending state, ordering, values, and safe rendering (**AC3–4**).
-- [x] **Task 4.2:** Show a no-match message for empty successful results and a visible error on request
-  failure without presenting failure as success. Evidence: browser tests cover empty and error states
+- [x] **Task 4.2:** Show a no-match message for empty successful results and a visible error on
+  request
+  failure without presenting failure as success. Evidence: browser tests cover empty and error
+  states
   (**AC2**).
 
 ## Phase 5: Integration and Review
 
-- [x] **Task 5.1:** After Tasks 1.1–2.5, run focused Java matching tests, browser tests, and the full
+- [x] **Task 5.1:** After Tasks 1.1–2.5, run focused Java matching tests, browser tests, and the
+  full
   Maven suite. Verify each acceptance criterion against test evidence, document unrelated failures,
   and complete the review report (**AC1–5**). Evidence: ranker tests (8), service tests (6),
   controller tests (6), integration test (1), and browser tests (21) pass; `mvn test` passes all

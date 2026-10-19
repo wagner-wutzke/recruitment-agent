@@ -7,7 +7,8 @@
 
 ## Phase 1: Matching Service
 
-- [x] **Task 1.1:** Implement the Vector Store search service using a selected job offer's description
+- [x] **Task 1.1:** Implement the Vector Store search service using a selected job offer's
+  description
   and required qualifications; de-duplicate hits by candidate email and resolve MongoDB candidate
   metadata. Add service tests for matches, duplicates, empty hits, missing offers, and failures
   (**AC1, AC3–4**).

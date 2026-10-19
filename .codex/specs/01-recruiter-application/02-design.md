@@ -109,7 +109,8 @@ empty state. Render database text as text in the page; do not interpret job desc
 
 ## 5. SPA Layout & State
 
-- Display the application name **Recruitment Agent** and the visible title **Recruitment made easy**.
+- Display the application name **Recruitment Agent** and the visible title **Recruitment made easy
+  **.
 - Use the specified dark blue and lilac palette.
 - Place the Job offers list in the left panel and selected-job details in the right panel.
 - Start with no selected offer and an empty details panel.
@@ -118,6 +119,7 @@ empty state. Render database text as text in the page; do not interpret job desc
   description, required qualifications, location, and allocation.
 - On request failure, show a distinct load-error state.
 
-The requirements do not define exact color values, typography, responsive breakpoints, or empty/error
+The requirements do not define exact color values, typography, responsive breakpoints, or
+empty/error
 copy. Keep those presentation choices consistent with the stated palette and behavior without
 changing the API or adding Job offer management controls.

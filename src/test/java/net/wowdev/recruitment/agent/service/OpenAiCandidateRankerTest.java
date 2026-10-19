@@ -194,7 +194,8 @@ class OpenAiCandidateRankerTest {
     when(secondResponse.entity(CandidateRankingResponse.class))
         .thenReturn(new CandidateRankingResponse(List.of()));
     VectorStore vectorStore = mock(VectorStore.class);
-    OpenAiCandidateRanker ranker = ranker(chatClient, mock(JobOfferRepository.class), vectorStore, 0.6);
+    OpenAiCandidateRanker ranker =
+        ranker(chatClient, mock(JobOfferRepository.class), vectorStore, 0.6);
     ranker.rank(jobOffer());
     ranker.rank(jobOffer());
 
@@ -264,11 +265,7 @@ class OpenAiCandidateRankerTest {
             new CandidateRankingResponse(
                 List.of(
                     new RankedCandidate(
-                        CANDIDATE_NAME,
-                        CANDIDATE_EMAIL,
-                        0.5,
-                        List.of("Java"),
-                        null))));
+                        CANDIDATE_NAME, CANDIDATE_EMAIL, 0.5, List.of("Java"), null))));
     assertThrows(
         IllegalStateException.class,
         () -> ranker(chatClient, mock(JobOfferRepository.class)).rank(jobOffer()));
@@ -316,7 +313,8 @@ class OpenAiCandidateRankerTest {
 
   @Test
   void mapsExplanationFieldsFromStructuredJsonResponse() throws Exception {
-    String json = """
+    String json =
+        """
         {"rankedCandidates":[{"candidateName":"Ada Lovelace",
         "candidateEmail":"ada@example.com","matchingProbability":0.93,
         "matchedSkills":["Java","Spring Boot"],

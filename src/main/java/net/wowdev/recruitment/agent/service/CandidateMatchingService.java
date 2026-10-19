@@ -36,8 +36,7 @@ public class CandidateMatchingService {
           || ranking.candidateEmail().isBlank()
           || ranking.matchedSkills() == null
           || ranking.relevantWorkExperiences() == null) {
-        throw new IllegalStateException(
-            "Candidate matching returned an invalid candidate result.");
+        throw new IllegalStateException("Candidate matching returned an invalid candidate result.");
       }
       validateProbability(ranking.matchingProbability());
       validRankings.add(ranking);

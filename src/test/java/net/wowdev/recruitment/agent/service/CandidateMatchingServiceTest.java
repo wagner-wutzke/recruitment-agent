@@ -10,7 +10,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -139,7 +138,7 @@ class CandidateMatchingServiceTest {
         IllegalStateException.class, () -> service(ranker).findCandidates(OFFER_ID));
 
     when(ranker.rank(any(JobOffer.class))).thenReturn(
-        Collections.singletonList((RankedCandidate) null));
+        Collections.singletonList(null));
     assertThrows(
         IllegalStateException.class, () -> service(ranker).findCandidates(OFFER_ID));
   }

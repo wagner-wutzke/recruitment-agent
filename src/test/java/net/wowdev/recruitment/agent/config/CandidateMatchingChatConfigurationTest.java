@@ -85,8 +85,7 @@ class CandidateMatchingChatConfigurationTest {
     ChatClient expected = mock(ChatClient.class);
     when(builder.build()).thenReturn(expected);
 
-    assertSame(
-        expected, configuration.candidateMatchingChatClient(builder));
+    assertSame(expected, configuration.candidateMatchingChatClient(builder));
     verify(builder).defaultSystem(systemPrompt, StandardCharsets.UTF_8);
 
     String prompt = systemPrompt.getContentAsString(StandardCharsets.UTF_8);

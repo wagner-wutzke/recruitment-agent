@@ -16,7 +16,8 @@
   lookup. The service does not load the offer directly from the repository.
 - `OpenAiCandidateRanker` builds the user query from the selected offer's position, description,
   required qualifications, responsibilities, and nice-to-have criteria. It creates and attaches a
-  single Spring AI `QuestionAnswerAdvisor` instance to each ranker instance. The advisor uses the local
+  single Spring AI `QuestionAnswerAdvisor` instance to each ranker instance. The advisor uses the
+  local
   `VectorStore` and configured similarity threshold to retrieve and augment the request with resume
   evidence. This is the only retrieval path; do not also call `VectorStore.similaritySearch`
   directly or configure a retrieval advisor on the default ChatClient.
@@ -40,12 +41,12 @@
 
 Use the existing `candidate.matching` configuration properties:
 
-| Property                                  | Current default                                  | Purpose                                                             |
-|-------------------------------------------|--------------------------------------------------|---------------------------------------------------------------------|
-| `candidate.matching.model`                | `gpt-6-luna`                                     | Spring AI chat model used to evaluate and rank retrieved candidates |
-| `candidate.matching.similarity-threshold` | `0.6`                                            | Inclusive Vector Store retrieval threshold; valid range is `[0,1]`  |
+| Property                                  | Current default                                  | Purpose                                                                  |
+|-------------------------------------------|--------------------------------------------------|--------------------------------------------------------------------------|
+| `candidate.matching.model`                | `gpt-6-luna`                                     | Spring AI chat model used to evaluate and rank retrieved candidates      |
+| `candidate.matching.similarity-threshold` | `0.6`                                            | Inclusive Vector Store retrieval threshold; valid range is `[0,1]`       |
 | `candidate.matching.top-k`                | `3`                                              | Maximum number of resume documents retrieved per query; positive integer |
-| `candidate.matching.system-prompt-file`   | `classpath:prompts/candidate-ranking-system.txt` | Resource containing the LLM system prompt                           |
+| `candidate.matching.system-prompt-file`   | `classpath:prompts/candidate-ranking-system.txt` | Resource containing the LLM system prompt                                |
 
 All values remain overridable through application properties or their corresponding
 environment variables. The system-prompt property accepts a filesystem resource path (for example,

@@ -95,5 +95,4 @@ class CandidateMatchingIntegrationTest {
         .andExpect(status().isServiceUnavailable())
         .andExpect(jsonPath("$.code").value("CANDIDATE_MATCHING_FAILED"));
   }
-
 }

@@ -66,7 +66,8 @@ or candidate ranking stage is introduced.
 
 ## 6. Verification Design
 
-- Unit tests cover query construction, Vector Store search, result de-duplication, candidate metadata
+- Unit tests cover query construction, Vector Store search, result de-duplication, candidate
+  metadata
   resolution, empty results, missing offers, and dependency failures.
 - Controller tests cover the request/response contract and HTTP error mapping.
 - jsdom tests cover button alignment/presence, disabled/enabled selection state, request payload,
