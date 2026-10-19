@@ -1,6 +1,6 @@
 # Task List: Upload and Index Resumes
 
-- **Status:** [ ] Active | [ ] Paused | [x] Completed
+- **Status:** [x] Active | [ ] Paused | [ ] Completed
 - **Target Agent:** @engineer
 - **Validation Agent:** @reviewer
 - **References:** `01-requirements.md`, `02-design.md`
@@ -44,6 +44,16 @@
 - [x] **Task 6.1:** Run Java, browser, MongoDB, and local Chroma verification; map all acceptance
   criteria to evidence and record reviewer findings (**AC1–8**).
 
+## Phase 7: Extract Candidate Email from PDF
+
+- [ ] **Task 7.1:** Remove Candidate Email from the upload form and multipart API contract; extract
+  the first valid email address in document order from parsed PDF text and use it as the MongoDB
+  identity and Chroma metadata. Reject PDFs without a valid email. Add unit, controller, and browser
+  tests for extraction, missing email, replacement, and submission without an email form field
+  (**AC1–5**).
+- [ ] **Task 7.2:** Run the relevant Java and browser suites, verify upload/replacement and failure
+  behavior against the updated criteria, and record verification/reviewer findings (**AC1–8**).
+
 ## Review Report
 
 - **Spec compliance:** Resume metadata is stored only in MongoDB, keyed by candidate email. The
@@ -61,3 +71,11 @@
 - **Gaps:** None found against the approved MongoDB-only requirements and design.
 - **Improvement suggestions:** None required for this feature scope.
 - **Reviewer decision:** APPROVED. Feature status: Completed.
+
+## Follow-up Review Report
+
+- **Spec compliance:** Pending email-from-PDF implementation.
+- **Acceptance-criteria coverage:** Pending.
+- **Gaps:** Pending.
+- **Improvement suggestions:** Pending.
+- **Reviewer decision:** Pending.

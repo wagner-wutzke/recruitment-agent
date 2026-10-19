@@ -83,10 +83,11 @@
               <p id="detail-allocation"></p></section>
           </div>
         </article>
-        <section aria-labelledby="search-results-heading" aria-live="polite" class="search-results d-none"
+        <section aria-labelledby="search-results-heading" aria-live="polite"
+                 class="search-results d-none"
                  id="search-results-panel">
-          <p class="eyebrow">CANDIDATE MATCHING</p>
-          <h2 id="search-results-heading">Search Results</h2>
+          <p class="eyebrow">CANDIDATE RANKING</p>
+          <h2 id="search-results-heading">Matches Panel</h2>
           <p class="state-message" id="search-results-status" role="status"></p>
           <ul class="search-results-list list-unstyled mb-0" id="search-results-list"></ul>
         </section>
@@ -95,7 +96,8 @@
   </div>
 </main>
 
-<div aria-hidden="true" aria-labelledby="offer-modal-title" class="modal fade" data-bs-backdrop="static"
+<div aria-hidden="true" aria-labelledby="offer-modal-title" class="modal fade"
+     data-bs-backdrop="static"
      data-bs-keyboard="false" id="offer-modal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content offer-modal-content">
@@ -115,7 +117,8 @@
           <div class="mb-3"><label class="form-label" for="company-name">Company Name</label><input
               class="form-control" id="company-name" name="companyName"></div>
           <div class="mb-3"><label class="form-label" for="job-description">Job
-            description</label><textarea aria-describedby="job-description-error" class="form-control"
+            description</label><textarea aria-describedby="job-description-error"
+                                         class="form-control"
                                          id="job-description" name="jobDescription" required
                                          rows="3"></textarea>
             <div class="invalid-feedback" id="job-description-error">This field is required.</div>
@@ -125,8 +128,10 @@
               class="form-control" id="responsibilities" name="responsibilities"
               rows="3"></textarea></div>
           <div class="mb-3"><label class="form-label" for="job-qualifications">Required
-            qualifications</label><textarea aria-describedby="job-qualifications-error" class="form-control"
-                                            id="job-qualifications" name="requiredQualifications" required
+            qualifications</label><textarea aria-describedby="job-qualifications-error"
+                                            class="form-control"
+                                            id="job-qualifications" name="requiredQualifications"
+                                            required
                                             rows="3"></textarea>
             <div class="invalid-feedback" id="job-qualifications-error">This field is required.
             </div>
@@ -140,12 +145,14 @@
                                    for="compensation">Compensation</label><input
               class="form-control" id="compensation" name="compensation" type="text"></div>
           <div class="mb-3"><label class="form-label" for="job-location">Location</label><input
-              aria-describedby="job-location-error" class="form-control" id="job-location" name="location"
+              aria-describedby="job-location-error" class="form-control" id="job-location"
+              name="location"
               required>
             <div class="invalid-feedback" id="job-location-error">This field is required.</div>
           </div>
           <div class="mb-3"><label class="form-label" for="job-allocation">Allocation</label><select
-              aria-describedby="job-allocation-error" class="form-select" id="job-allocation" name="allocation"
+              aria-describedby="job-allocation-error" class="form-select" id="job-allocation"
+              name="allocation"
               required>
             <option value="">Choose allocation</option>
             <option>Remote</option>
@@ -164,7 +171,8 @@
   </div>
 </div>
 
-<div aria-hidden="true" aria-labelledby="resume-modal-title" class="modal fade" data-bs-backdrop="static"
+<div aria-hidden="true" aria-labelledby="resume-modal-title" class="modal fade"
+     data-bs-backdrop="static"
      data-bs-keyboard="false" id="resume-modal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content offer-modal-content">
@@ -179,9 +187,6 @@
           <div class="mb-3"><label class="form-label" for="resume-candidate-name">Candidate
             Name</label><input class="form-control" id="resume-candidate-name" name="candidateName"
                                required></div>
-          <div class="mb-3"><label class="form-label" for="resume-candidate-email">Candidate
-            Email</label><input class="form-control" id="resume-candidate-email"
-                                name="candidateEmail" required type="email"></div>
           <div class="mb-3"><label class="form-label" for="resume-file">PDF file</label><input
               accept=".pdf,application/pdf" class="form-control" id="resume-file" name="file"
               required type="file"></div>
@@ -196,7 +201,8 @@
   </div>
 </div>
 
-<div aria-describedby="discard-message" aria-labelledby="discard-title" aria-modal="true" class="discard-backdrop d-none"
+<div aria-describedby="discard-message" aria-labelledby="discard-title" aria-modal="true"
+     class="discard-backdrop d-none"
      id="discard-confirmation" role="alertdialog">
   <div class="discard-dialog"><span aria-hidden="true" class="empty-mark">!</span>
     <h2 id="discard-title">Discard your changes?</h2>

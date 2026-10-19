@@ -145,14 +145,26 @@ function displaySearchResults(candidates) {
 
   searchResultsStatus.textContent = `Found ${candidates.length} matching candidate${candidates.length
   === 1 ? "" : "s"}.`;
-  candidates.forEach((candidate) => {
+  candidates.forEach((candidate, index) => {
     const item = document.createElement("li");
     item.className = "candidate-match";
+    const position = document.createElement("span");
+    position.className = "candidate-position";
+    position.textContent = `#${candidate.rankingPosition ?? index + 1}`;
     const name = document.createElement("strong");
     name.textContent = candidate.candidateName ?? "Unnamed candidate";
     const email = document.createElement("span");
+    email.className = "candidate-email";
     email.textContent = candidate.candidateEmail ?? "";
-    item.append(name, email);
+    const probability = candidate.matchingProbability == null
+        ? Number.NaN
+        : Number(candidate.matchingProbability);
+    const score = document.createElement("span");
+    score.className = "candidate-probability";
+    score.textContent = Number.isFinite(probability) && probability >= 0 && probability <= 1
+        ? `Estimated match probability: ${Math.round(probability * 100)}%`
+        : "Estimated match probability unavailable";
+    item.append(position, name, email, score);
     searchResultsList.append(item);
   });
 }
@@ -330,7 +342,6 @@ resumeForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const required = [
     resumeForm.elements.namedItem("candidateName"),
-    resumeForm.elements.namedItem("candidateEmail"),
     resumeForm.elements.namedItem("file"),
   ];
   const valid = required.map((field) => {
@@ -352,8 +363,7 @@ resumeForm.addEventListener("submit", async (event) => {
   try {
     const formData = new FormData();
     formData.append("candidateName", required[0].value.trim());
-    formData.append("candidateEmail", required[1].value.trim());
-    formData.append("file", required[2].files[0]);
+    formData.append("file", required[1].files[0]);
     const response = await fetch("/api/resumes", {
       method: "POST",
       body: formData,

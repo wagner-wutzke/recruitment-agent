@@ -25,7 +25,7 @@ Map `ResumeDocument` to the `resumes` collection:
 
 | Field            | Java type | Mongo field      | Constraint                       |
 |------------------|-----------|------------------|----------------------------------|
-| `candidateEmail` | `String`  | `_id`            | Required, unique identifier      |
+| `candidateEmail` | `String`  | `_id`            | Required; extracted from PDF text |
 | `candidateName`  | `String`  | `candidateName`  | Required                         |
 | `fileName`       | `String`  | `fileName`       | Required, safe retained filename |
 | `uploadDatetime` | `Instant` | `uploadDatetime` | Required, set by server in UTC   |
@@ -51,12 +51,15 @@ Bind `resume.indexing` to a `ResumeIndexingProperties` configuration-properties 
 
 ### `POST /api/resumes`
 
-Accept `multipart/form-data` with `candidateName`, `candidateEmail`, and `file` parts.
+Accept `multipart/form-data` with `candidateName` and `file` parts. Do not accept a
+`candidateEmail` form field. `ResumePdfIndexer` extracts PDF text and selects the first valid email
+address in document order; reject the upload if none is found. Return the extracted email in the
+response as part of the saved resume metadata.
 
 - Return `201 Created` for a new email and `200 OK` when replacing an existing email.
 - Return `candidateName`, `candidateEmail`, `fileName`, `uploadDatetime`, and `documentId`.
-- Return `400 Bad Request` for missing fields, unsafe candidate names, unreadable PDFs, or PDFs
-  without extractable text.
+- Return `400 Bad Request` for missing fields, unsafe candidate names, unreadable PDFs, PDFs
+  without extractable text, or PDFs with no valid email address.
 - Return `503 Service Unavailable` if local file retention, MongoDB persistence, or Chroma indexing
   fails.
 
@@ -72,9 +75,11 @@ No list, delete, candidate-search, or matching endpoints are added.
 
 ## 4. Upload and Index Flow
 
-1. Validate required multipart fields and reject candidate names containing `/`, `\\`, or NUL.
-2. Parse the uploaded bytes and reject invalid PDFs or PDFs with no extractable text.
-3. Split extracted text into vector documents and attach the candidate email, generated UUID string,
+1. Validate `candidateName` and `file`, and reject candidate names containing `/`, `\\`, or NUL.
+2. Parse the uploaded bytes and reject invalid PDFs or PDFs with no extractable text. Extract the
+   first valid email address in document order; reject the PDF if no valid address is present.
+3. Use the extracted email as the resume's MongoDB `_id` and Chroma metadata `candidateEmail`.
+   Split extracted text into vector documents and attach the extracted email, generated UUID string,
    and renamed disk filename as metadata.
 4. Retain the original bytes as `[CANDIDATE_NAME].pdf`, replacing spaces with `_`. Resolve the path
    under the configured resume directory and reject any path that escapes it.
@@ -102,8 +107,9 @@ service tests.
 ## 6. SPA Behavior
 
 - Keep the **Upload Resume** button below the Offers panel.
-- Keep the **Resume Data** Bootstrap modal with required Candidate Name, Candidate Email, and PDF
-  fields plus Cancel and Save actions.
+- Keep the **Resume Data** Bootstrap modal with required Candidate Name and PDF fields plus Cancel
+  and Save actions. Do not ask the recruiter to enter Candidate Email; the server extracts it from
+  PDF text.
 - Submit with `FormData` to `POST /api/resumes`.
 - Close the modal on successful upload; keep it open and show an error after a failed upload.
 - Do not persist resume form data in browser storage.
@@ -119,9 +125,11 @@ service tests.
   failure compensation, and replacement cleanup.
 - Configuration binding tests verify all five `resume.indexing` values, defaults, and custom
   overrides passed to `TokenTextSplitter`.
-- Controller tests verify multipart statuses, validation/dependency errors, attachment headers,
-  unknown-email 404, and safe handling of missing files.
-- jsdom tests verify upload form/cancel/save behavior and failed-upload feedback.
+- Controller tests verify multipart statuses, PDF-derived email handling, missing-email-in-PDF and
+  other validation/dependency errors, attachment headers, unknown-email 404, and safe handling of
+  missing files.
+- jsdom tests verify the form has no Candidate Email input, multipart submission includes only the
+  candidate name and file, and cancel/save/failure behavior.
 - The local Chroma check verifies add, replacement, and deletion in a dedicated test collection.
 - Run the complete Maven and npm suites and record actual results in `03-tasks.md`.
 

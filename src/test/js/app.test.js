@@ -91,7 +91,12 @@ test("loads offers, selects details, and shows management controls appropriately
 test("searches the selected job offer and displays matching candidates safely", async () => {
   const requests = [];
   const matchingCandidates = [
-    {candidateName: "<img src=x onerror=alert(1)>", candidateEmail: "ada@example.com"},
+    {
+      candidateName: "<img src=x onerror=alert(1)>",
+      candidateEmail: "ada@example.com",
+      rankingPosition: 1,
+      matchingProbability: 0.91,
+    },
   ];
   const dom = await loadPage(async (url, options) => {
     if (!options) {
@@ -116,11 +121,14 @@ test("searches the selected job offer and displays matching candidates safely", 
   assert.deepEqual(JSON.parse(requests[0].options.body), {jobOfferId: offer.id});
   assert.equal(document.querySelector("#offer-details").classList.contains("d-none"), true);
   assert.equal(document.querySelector("#search-results-panel").classList.contains("d-none"), false);
-  assert.equal(document.querySelector("#search-results-heading").textContent, "Search Results");
+  assert.equal(document.querySelector("#search-results-heading").textContent, "Matches Panel");
   assert.equal(document.querySelector("#search-results-status").textContent,
       "Found 1 matching candidate.");
   assert.equal(document.querySelector("#search-results-list img"), null);
   assert.equal(document.querySelector("#search-results-list").textContent.includes("<img"), true);
+  assert.equal(document.querySelector(".candidate-position").textContent, "#1");
+  assert.equal(document.querySelector(".candidate-probability").textContent,
+      "Estimated match probability: 91%");
   assert.equal(button.disabled, false);
   dom.window.close();
 });
@@ -257,7 +265,7 @@ test("arranges requested detail and modal fields vertically in the specified ord
   const detailLabels = [...document.querySelectorAll("#offer-details .detail-item h3")]
   .map((heading) => heading.textContent);
   const formLabels = [...document.querySelectorAll("#offer-form label")]
-  .map((label) => label.textContent.trim());
+  .map((label) => label.textContent.trim().replace(/\s+/g, " "));
   const requestedOrder = ["Description", "Responsibilities", "Required qualifications",
     "Nice to Have", "Benefits"];
   const requestedFormOrder = ["Job description", "Responsibilities", "Required qualifications",
@@ -383,7 +391,7 @@ test("opens and cancels the Resume Data modal without submitting a resume", asyn
   assert.equal(modal.classList.contains("show"), true);
   assert.equal(document.querySelector("#resume-modal-title").textContent, "Resume Data");
   assert.equal(document.querySelector("#resume-candidate-name").required, true);
-  assert.equal(document.querySelector("#resume-candidate-email").required, true);
+  assert.equal(document.querySelector("#resume-candidate-email"), null);
   assert.equal(document.querySelector("#resume-file").required, true);
   assert.equal(document.querySelector("#cancel-resume").textContent, "Cancel");
   assert.equal(document.querySelector("#save-resume").textContent, "Save");
@@ -406,7 +414,6 @@ test("submits a resume as multipart data and closes after success", async () => 
   const {document, File} = dom.window;
   document.querySelector("#upload-resume").click();
   document.querySelector("#resume-candidate-name").value = "Ada Lovelace";
-  document.querySelector("#resume-candidate-email").value = "ada@example.com";
   const file = new File(["%PDF-sample"], "resume.pdf", {type: "application/pdf"});
   Object.defineProperty(document.querySelector("#resume-file"), "files", {value: [file]});
 
@@ -419,7 +426,7 @@ test("submits a resume as multipart data and closes after success", async () => 
   assert.equal(uploadRequest.options.method, "POST");
   assert.equal(uploadRequest.options.headers, undefined);
   assert.equal(uploadRequest.options.body.get("candidateName"), "Ada Lovelace");
-  assert.equal(uploadRequest.options.body.get("candidateEmail"), "ada@example.com");
+  assert.equal(uploadRequest.options.body.get("candidateEmail"), null);
   assert.equal(uploadRequest.options.body.get("file").name, "resume.pdf");
   assert.equal(document.querySelector("#resume-modal").classList.contains("show"), false);
   dom.window.close();
@@ -435,7 +442,6 @@ test("keeps the resume modal open with a visible server error after failure", as
   const {document, File} = dom.window;
   document.querySelector("#upload-resume").click();
   document.querySelector("#resume-candidate-name").value = "Ada Lovelace";
-  document.querySelector("#resume-candidate-email").value = "ada@example.com";
   Object.defineProperty(document.querySelector("#resume-file"), "files", {
     value: [new File(["%PDF-sample"], "resume.pdf", {type: "application/pdf"})],
   });
@@ -465,7 +471,7 @@ test("blocks incomplete resume form submissions", async () => {
   );
   await new Promise((resolve) => setImmediate(resolve));
 
-  assert.equal(document.querySelectorAll("#resume-form .is-invalid").length, 3);
+  assert.equal(document.querySelectorAll("#resume-form .is-invalid").length, 2);
   assert.equal(requests.some(({url}) => url === "/api/resumes"), false);
   assert.equal(document.querySelector("#resume-modal").classList.contains("show"), true);
   dom.window.close();

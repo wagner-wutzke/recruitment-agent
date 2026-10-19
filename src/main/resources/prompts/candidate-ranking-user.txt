@@ -1,0 +1,7 @@
+Compare semantic meaning and Candidates position, technical skills, country, city, working mode,
+and professional experience.
+Return the candidates ranked from highest to lowest overall relevance.
+
+Each item must contain candidateName, candidateEmail, and matchingProbability (a finite decimal
+from 0 to 1 inclusive), copied from the corresponding retrieved resume evidence.
+Return an empty array when no retrieved candidate is a meaningful match.

@@ -1,14 +1,41 @@
 package net.wowdev.recruitment.agent.config;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.io.Resource;
 
 @Configuration
 public class CandidateMatchingChatConfiguration {
 
+  @Value("${candidate.matching.system-prompt-file}")
+  private Resource systemPrompt;
+
   @Bean
   ChatClient candidateMatchingChatClient(ChatClient.Builder builder) {
-    return builder.build();
+    validateSystemPrompt();
+
+    return builder
+        .defaultSystem(systemPrompt, StandardCharsets.UTF_8)
+        .defaultAdvisors(new SimpleLoggerAdvisor(Ordered.LOWEST_PRECEDENCE))
+        .build();
+  }
+
+  private void validateSystemPrompt() {
+    try {
+      if (systemPrompt.getContentAsString(StandardCharsets.UTF_8).isBlank()) {
+        throw new IllegalStateException("Candidate matching system prompt file is empty.");
+      }
+    } catch (IOException exception) {
+      throw new IllegalStateException(
+          "Could not read candidate matching system prompt file: "
+              + systemPrompt.getDescription(),
+          exception);
+    }
   }
 }

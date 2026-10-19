@@ -66,6 +66,14 @@ class ResumeUploadIntegrationTest {
   }
 
   private static byte[] pdfWithText(String text) throws Exception {
+    return pdf(text + " " + EMAIL);
+  }
+
+  private static byte[] pdfWithoutEmail(String text) throws Exception {
+    return pdf(text);
+  }
+
+  private static byte[] pdf(String text) throws Exception {
     try (PDDocument document = new PDDocument();
         ByteArrayOutputStream output = new ByteArrayOutputStream()) {
       PDPage page = new PDPage();
@@ -132,7 +140,7 @@ class ResumeUploadIntegrationTest {
             .andReturn()
             .getResponse()
             .getContentAsByteArray();
-    assertEquals("Replacement resume content for Kotlin systems", extractText(downloaded));
+    assertTrue(extractText(downloaded).startsWith("Replacement resume content for Kotlin systems"));
   }
 
   @Test
@@ -143,8 +151,7 @@ class ResumeUploadIntegrationTest {
                 .file(
                     new MockMultipartFile(
                         "file", "bad.pdf", "application/pdf", "not a PDF".getBytes()))
-                .param("candidateName", "Unreadable Candidate")
-                .param("candidateEmail", EMAIL))
+                .param("candidateName", "Unreadable Candidate"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("INVALID_RESUME_UPLOAD"));
 
@@ -152,13 +159,31 @@ class ResumeUploadIntegrationTest {
     assertFalse(Files.exists(storageDirectory.resolve("resumes/Unreadable_Candidate.pdf")));
   }
 
+  @Test
+  void rejectsReadablePdfWithoutEmailWithoutSavingRowOrRetainingFile() throws Exception {
+    mockMvc
+        .perform(
+            multipart("/api/resumes")
+                .file(
+                    new MockMultipartFile(
+                        "file",
+                        "no-email.pdf",
+                        "application/pdf",
+                        pdfWithoutEmail("Resume with no email address")))
+                .param("candidateName", "No Email Candidate"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("PDF contains no valid candidate email address"));
+
+    assertFalse(resumeRepository.existsById(EMAIL));
+    assertFalse(Files.exists(storageDirectory.resolve("resumes/No_Email_Candidate.pdf")));
+  }
+
   private MvcResult upload(String candidateName, byte[] pdf) throws Exception {
     return mockMvc
         .perform(
             multipart("/api/resumes")
                 .file(new MockMultipartFile("file", "original.pdf", "application/pdf", pdf))
-                .param("candidateName", candidateName)
-                .param("candidateEmail", EMAIL))
+                .param("candidateName", candidateName))
         .andReturn();
   }
 

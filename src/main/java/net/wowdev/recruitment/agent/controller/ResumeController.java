@@ -27,7 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/resumes")
-public class  ResumeController {
+public class ResumeController {
 
   private final ResumeUploadService resumeUploadService;
 
@@ -38,13 +38,9 @@ public class  ResumeController {
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<ResumeResponse> upload(
       @RequestParam(required = false) String candidateName,
-      @RequestParam(required = false) String candidateEmail,
       @RequestParam(required = false) MultipartFile file) {
     if (candidateName == null || candidateName.isBlank()) {
       throw new InvalidResumeRequestException("Candidate name is required.");
-    }
-    if (candidateEmail == null || candidateEmail.isBlank()) {
-      throw new InvalidResumeRequestException("Candidate email is required.");
     }
     if (file == null || file.isEmpty()) {
       throw new InvalidResumeRequestException("A PDF file is required.");
@@ -52,7 +48,7 @@ public class  ResumeController {
 
     ResumeUploadResult result;
     try {
-      result = resumeUploadService.upload(candidateName, candidateEmail, file.getBytes());
+      result = resumeUploadService.upload(candidateName, file.getBytes());
     } catch (IOException exception) {
       throw new InvalidResumeRequestException("The uploaded PDF could not be read.");
     }
@@ -83,7 +79,8 @@ public class  ResumeController {
   @ExceptionHandler(ResumeDownloadException.class)
   public ResponseEntity<ApiErrorResponse> handleDownloadFailure() {
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-        .body(new ApiErrorResponse("RESUME_DOWNLOAD_FAILED", "Resume file could not be downloaded."));
+        .body(
+            new ApiErrorResponse("RESUME_DOWNLOAD_FAILED", "Resume file could not be downloaded."));
   }
 
   @ExceptionHandler({

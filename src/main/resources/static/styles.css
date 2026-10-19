@@ -271,7 +271,7 @@ h1 {
 .offer-list {
   display: grid;
   gap: 9px;
-  max-height: 415px;
+  max-height: 360px;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 2px 8px 2px 2px;
@@ -349,7 +349,7 @@ h1 {
 .details-panel {
   margin-left: auto;
   min-height: 415px;
-  max-height: calc(100vh - 350px);
+  max-height: calc(100vh - 300px);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-color: var(--blue) var(--surface-tint);
@@ -463,9 +463,23 @@ h1 {
 }
 
 .candidate-match strong,
-.candidate-match span {
+.candidate-match > span {
   display: block;
   overflow-wrap: anywhere;
+}
+
+.candidate-match .candidate-position {
+  background: #fff4c4;
+  border: 1px solid #eed982;
+  border-radius: 999px;
+  color: #765c10;
+  display: inline-flex;
+  font-family: var(--mono-font);
+  font-size: .72rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  padding: 3px 9px;
+  width: fit-content;
 }
 
 .candidate-match strong {
@@ -473,11 +487,19 @@ h1 {
   font-family: var(--display-font);
 }
 
-.candidate-match span {
+.candidate-match .candidate-email {
   color: var(--muted);
   font-family: var(--mono-font);
   font-size: .75rem;
   margin-top: 5px;
+}
+
+.candidate-match .candidate-probability {
+  color: var(--blue-deep);
+  font-family: var(--mono-font);
+  font-size: .75rem;
+  font-weight: 600;
+  margin-top: 8px;
 }
 
 .btn {
