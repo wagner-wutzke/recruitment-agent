@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Map;
+import java.util.Properties;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
@@ -32,6 +35,19 @@ class CandidateMatchingPropertiesTest {
 
     assertEquals("gpt-6.1-sol", properties.getModel());
     assertEquals(0.75, properties.getSimilarityThreshold());
+  }
+
+  @Test
+  void applicationPropertiesUseDocumentedMatchingDefaults() throws Exception {
+    Properties applicationProperties =
+        PropertiesLoaderUtils.loadProperties(new ClassPathResource("application.properties"));
+
+    assertEquals(
+        "${CANDIDATE_MATCHING_MODEL:gpt-6-luna}",
+        applicationProperties.getProperty("candidate.matching.model"));
+    assertEquals(
+        "${CANDIDATE_MATCHING_SIMILARITY_THRESHOLD:0.6}",
+        applicationProperties.getProperty("candidate.matching.similarity-threshold"));
   }
 
   @Test

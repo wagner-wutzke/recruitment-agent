@@ -2,13 +2,8 @@ package net.wowdev.recruitment.agent.config;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import net.wowdev.recruitment.agent.service.CandidateMatchingProperties;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
-import org.springframework.ai.chat.client.advisor.api.Advisor;
-import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
-import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,22 +17,12 @@ public class CandidateMatchingChatConfiguration {
   private Resource systemPrompt;
 
   @Bean
-  ChatClient candidateMatchingChatClient(
-      ChatClient.Builder builder,
-      VectorStore vectorStore,
-      CandidateMatchingProperties properties) {
+  ChatClient candidateMatchingChatClient(ChatClient.Builder builder) {
     validateSystemPrompt();
-    Advisor retrievalAdvisor =
-        RetrievalAugmentationAdvisor.builder()
-            .documentRetriever(
-                VectorStoreDocumentRetriever.builder()
-                    .vectorStore(vectorStore)
-                    .similarityThreshold(properties.getSimilarityThreshold())
-                    .build())
-            .build();
+
     return builder
         .defaultSystem(systemPrompt, StandardCharsets.UTF_8)
-        .defaultAdvisors(retrievalAdvisor, new SimpleLoggerAdvisor(Ordered.LOWEST_PRECEDENCE))
+        .defaultAdvisors(new SimpleLoggerAdvisor(Ordered.LOWEST_PRECEDENCE))
         .build();
   }
 

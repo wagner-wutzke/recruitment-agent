@@ -1,11 +1,12 @@
 package net.wowdev.recruitment.agent.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -18,6 +19,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.rag.Query;
+import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
+import org.springframework.ai.rag.retrieval.search.DocumentRetriever;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class OpenAiCandidateRankerTest {
 
@@ -41,7 +49,23 @@ class OpenAiCandidateRankerTest {
   }
 
   private static OpenAiCandidateRanker ranker(ChatClient chatClient, JobOfferRepository offers) {
-    return new OpenAiCandidateRanker(chatClient, offers);
+    return ranker(chatClient, offers, mock(VectorStore.class), 0.6);
+  }
+
+  private static OpenAiCandidateRanker ranker(
+      ChatClient chatClient,
+      JobOfferRepository offers,
+      VectorStore vectorStore,
+      double similarityThreshold) {
+    CandidateMatchingProperties properties = new CandidateMatchingProperties();
+    properties.setSimilarityThreshold(similarityThreshold);
+    OpenAiCandidateRanker ranker =
+        new OpenAiCandidateRanker(chatClient, offers, vectorStore, properties);
+    ReflectionTestUtils.setField(
+        ranker,
+        "userPrompt",
+        new org.springframework.core.io.ClassPathResource("prompts/candidate-ranking-user.txt"));
+    return ranker;
   }
 
   private static ChatClient.ChatClientRequestSpec stubChat(
@@ -50,6 +74,7 @@ class OpenAiCandidateRankerTest {
     ChatClient.CallResponseSpec response = mock(ChatClient.CallResponseSpec.class);
     when(chatClient.prompt()).thenReturn(request);
     when(request.user(anyString())).thenReturn(request);
+    when(request.advisors(any(Advisor[].class))).thenReturn(request);
     when(request.call()).thenReturn(response);
     when(response.entity(CandidateRankingResponse.class))
         .thenReturn(new CandidateRankingResponse(rankedCandidates));
@@ -57,11 +82,13 @@ class OpenAiCandidateRankerTest {
   }
 
   @Test
-  void submitsOfferCriteriaThroughChatClientDefaultAdvisors() {
+  void attachesRequestRetrievalAdvisorAndSubmitsOfferCriteria() {
     ChatClient chatClient = mock(ChatClient.class);
+    VectorStore vectorStore = mock(VectorStore.class);
     ChatClient.ChatClientRequestSpec request =
         stubChat(chatClient, List.of(new RankedCandidate(CANDIDATE_NAME, CANDIDATE_EMAIL, 0.93)));
-    OpenAiCandidateRanker ranker = ranker(chatClient, mock(JobOfferRepository.class));
+    OpenAiCandidateRanker ranker =
+        ranker(chatClient, mock(JobOfferRepository.class), vectorStore, 0.82);
 
     assertEquals(
         List.of(new RankedCandidate(CANDIDATE_NAME, CANDIDATE_EMAIL, 0.93)),
@@ -80,7 +107,20 @@ class OpenAiCandidateRankerTest {
     assertTrue(query.getValue().contains("country"));
     assertTrue(query.getValue().contains("city"));
     assertTrue(query.getValue().contains("professional experience"));
-    verify(request, never()).advisors(org.mockito.ArgumentMatchers.<Advisor>any());
+
+    ArgumentCaptor<Advisor[]> advisors = ArgumentCaptor.forClass(Advisor[].class);
+    verify(request).advisors(advisors.capture());
+    assertEquals(1, advisors.getValue().length);
+    RetrievalAugmentationAdvisor retrievalAdvisor =
+        assertInstanceOf(RetrievalAugmentationAdvisor.class, advisors.getValue()[0]);
+    when(vectorStore.similaritySearch(any(SearchRequest.class)))
+        .thenReturn(List.of(mock(Document.class)));
+    DocumentRetriever retriever =
+        (DocumentRetriever) ReflectionTestUtils.getField(retrievalAdvisor, "documentRetriever");
+    retriever.retrieve(new Query(query.getValue()));
+    ArgumentCaptor<SearchRequest> searchRequest = ArgumentCaptor.forClass(SearchRequest.class);
+    verify(vectorStore).similaritySearch(searchRequest.capture());
+    assertEquals(0.82, searchRequest.getValue().getSimilarityThreshold());
   }
 
   @Test
@@ -106,11 +146,39 @@ class OpenAiCandidateRankerTest {
     ChatClient.ChatClientRequestSpec request = mock(ChatClient.ChatClientRequestSpec.class);
     when(chatClient.prompt()).thenReturn(request);
     when(request.user(anyString())).thenReturn(request);
+    when(request.advisors(any(Advisor[].class))).thenReturn(request);
     when(request.call()).thenThrow(new IllegalStateException("Vector Store unavailable"));
 
     assertThrows(
         IllegalStateException.class,
         () -> ranker(chatClient, mock(JobOfferRepository.class)).rank(jobOffer()));
+  }
+
+  @Test
+  void reusesTheSameRankerOwnedAdvisorAcrossRequests() {
+    ChatClient chatClient = mock(ChatClient.class);
+    ChatClient.ChatClientRequestSpec request = stubChat(chatClient, List.of());
+    ChatClient.ChatClientRequestSpec secondRequest = mock(ChatClient.ChatClientRequestSpec.class);
+    ChatClient.CallResponseSpec secondResponse = mock(ChatClient.CallResponseSpec.class);
+    when(chatClient.prompt()).thenReturn(request, secondRequest);
+    when(secondRequest.user(anyString())).thenReturn(secondRequest);
+    when(secondRequest.advisors(any(Advisor[].class))).thenReturn(secondRequest);
+    when(secondRequest.call()).thenReturn(secondResponse);
+    when(secondResponse.entity(CandidateRankingResponse.class))
+        .thenReturn(new CandidateRankingResponse(List.of()));
+    VectorStore vectorStore = mock(VectorStore.class);
+    OpenAiCandidateRanker ranker = ranker(chatClient, mock(JobOfferRepository.class), vectorStore, 0.6);
+    ranker.rank(jobOffer());
+    ranker.rank(jobOffer());
+
+    ArgumentCaptor<Advisor[]> advisors = ArgumentCaptor.forClass(Advisor[].class);
+    verify(request).advisors(advisors.capture());
+    ArgumentCaptor<Advisor[]> secondAdvisors = ArgumentCaptor.forClass(Advisor[].class);
+    verify(secondRequest).advisors(secondAdvisors.capture());
+    assertEquals(1, advisors.getValue().length);
+    assertEquals(1, secondAdvisors.getValue().length);
+    assertEquals(advisors.getValue()[0], secondAdvisors.getValue()[0]);
+    assertInstanceOf(RetrievalAugmentationAdvisor.class, advisors.getValue()[0]);
   }
 
   @Test
@@ -120,6 +188,7 @@ class OpenAiCandidateRankerTest {
     ChatClient.CallResponseSpec response = mock(ChatClient.CallResponseSpec.class);
     when(chatClient.prompt()).thenReturn(request);
     when(request.user(anyString())).thenReturn(request);
+    when(request.advisors(any(Advisor[].class))).thenReturn(request);
     when(request.call()).thenReturn(response);
     when(response.entity(CandidateRankingResponse.class)).thenReturn(null);
 

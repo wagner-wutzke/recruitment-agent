@@ -4,13 +4,16 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import net.wowdev.recruitment.agent.entity.ResumeDocument;
 import net.wowdev.recruitment.agent.repository.ResumeRepository;
+import org.springframework.ai.chroma.vectorstore.ChromaVectorStore;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class ResumeUploadService {
 
