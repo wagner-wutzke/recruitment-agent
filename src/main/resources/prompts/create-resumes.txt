@@ -1,0 +1,33 @@
+Create 40 CV (Curriculum Vitae) files in PDF format. 
+1. Each candidate has following fields:
+  - Candidate Name
+  - Candidate Email
+  - Country: random country.
+  - City: random City in the selected country
+  - Position: must be one of the following:
+    - Java Senior Backend Engineer
+    - Python Software Engineer
+    - Salesforce Senior Developer
+    - AWS Java Developer
+    - Python Backend Senior Engineer
+    - Salesforce Technical Architect
+    - Node / Typescript Full-Stack Engineer
+    - Python AI Agents Developer
+    - Go Backend Developer
+    - Node Fullstack Engineer
+  - Skills: at least 7 necessary skills in the selected Position area (be very creative)
+  - Working Mode Allocation: Remote, Hybrid, or In-house.
+  - Relocation Readiness: Yes / No.
+  - Expected Salary Range per year: value and currency.
+2. All those fields are to be shown in a table format (without header).
+  
+3. Each candidate must have 4 to 6 different professional experiences in his/her history. (be very creative)
+  - A previous experience can be in another random position (not only from the give list).
+  - Each experience must have specific timeline dates, a random company and activity area in its description.
+  - Each experience must contain 3 to 5 different technical responsibilities (be very creative).
+  - The list of professional experiences is to be presented ordered by date: last experience first.
+  
+4. The PDF files have a resume style template layout.
+5. The candidate's name is additionally to be set as document title and shown at the documents top.
+6. The PDF files names have the format [CANDIDATE_NAME].pdf .
+7. Provide a .zip file with all generated resume PDF files.

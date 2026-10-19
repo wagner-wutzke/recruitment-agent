@@ -51,16 +51,12 @@ public class OpenAiCandidateRanker implements CandidateRanker {
 
   @Override
   public List<RankedCandidate> rank(JobOffer offer) {
-    return requestRanking(offer);
-  }
-
-  private List<RankedCandidate> requestRanking(JobOffer offer) {
     CandidateRankingResponse response;
     response =
         chatClient
             .prompt()
-            .advisors(retrievalAdvisor)
             .user(rankingPrompt(offer))
+            .advisors(retrievalAdvisor)
             .call()
             .entity(CandidateRankingResponse.class);
     if (response == null || response.rankedCandidates() == null) {
@@ -71,9 +67,11 @@ public class OpenAiCandidateRanker implements CandidateRanker {
           || candidate.candidateName() == null
           || candidate.candidateName().isBlank()
           || candidate.candidateEmail() == null
-          || candidate.candidateEmail().isBlank()) {
+          || candidate.candidateEmail().isBlank()
+          || candidate.matchedSkills() == null
+          || candidate.relevantWorkExperiences() == null) {
         throw new IllegalStateException(
-            "Candidate matching returned an invalid candidate identity.");
+            "Candidate matching returned an invalid candidate result.");
       }
       validateProbability(candidate.matchingProbability());
     }
@@ -86,7 +84,7 @@ public class OpenAiCandidateRanker implements CandidateRanker {
             VectorStoreDocumentRetriever.builder()
                 .vectorStore(vectorStore)
                 .similarityThreshold(matchingProperties.getSimilarityThreshold())
-                .topK(3)
+                .topK(matchingProperties.getTopK())
                 .build())
         .build();
   }

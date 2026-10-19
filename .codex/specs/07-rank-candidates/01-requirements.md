@@ -33,6 +33,9 @@ The candidates list is ordered with the highest-ranked candidate first.
 - Store the LLM system prompt in a separate text file. Configure its resource path through
   `candidate.matching.system-prompt-file` in application properties, so the prompt can be changed
   without modifying Java source.
+- Configure the maximum number of resume documents retrieved per matching query through the
+  `candidate.matching.top-k` application property. It must default to the existing value of `3`
+  and accept only positive integers.
 
 ## 4. Non-Functional Requirements
 

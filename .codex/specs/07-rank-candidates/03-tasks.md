@@ -5,6 +5,13 @@
 - **Validation Agent:** @reviewer
 - **References:** `01-requirements.md`, `02-design.md`
 
+## Follow-up: Configurable Retrieval Limit
+
+- [x] Bind `candidate.matching.top-k` with a default of `3`, reject non-positive values, and pass
+  the configured value to `VectorStoreDocumentRetriever`. Evidence: property tests cover default,
+  override, and invalid values; ranker test verifies configured topK is propagated to the actual
+  Vector Store `SearchRequest`; focused Maven tests pass.
+
 ## Phase 1: Matching Configuration and External Prompt
 
 - [x] **Task 1.1:** Configure `CandidateMatchingChatConfiguration` to load the configured prompt as

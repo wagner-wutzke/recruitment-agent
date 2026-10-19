@@ -32,7 +32,7 @@ class CandidateMatchingServiceTest {
   }
 
   private static RankedCandidate candidate(String name, String email, double probability) {
-    return new RankedCandidate(name, email, probability);
+    return new RankedCandidate(name, email, probability, List.of(), List.of());
   }
 
   private static CandidateMatchingService service(CandidateRanker ranker) {
@@ -51,8 +51,8 @@ class CandidateMatchingServiceTest {
 
     assertEquals(
         List.of(
-            new CandidateMatch("Grace Hopper", "grace@example.com", 1, 0.92),
-            new CandidateMatch("Ada Lovelace", "ada@example.com", 2, 0.81)),
+            new CandidateMatch("Grace Hopper", "grace@example.com", 1, 0.92, List.of(), List.of()),
+            new CandidateMatch("Ada Lovelace", "ada@example.com", 2, 0.81, List.of(), List.of())),
         service(ranker).findCandidates(OFFER_ID));
     verify(ranker).loadJobOffer(OFFER_ID);
     verify(ranker).rank(jobOffer());
@@ -71,8 +71,8 @@ class CandidateMatchingServiceTest {
 
     assertEquals(
         List.of(
-            new CandidateMatch("Ada Lovelace", "ada@example.com", 1, 0.91),
-            new CandidateMatch("Grace Hopper", "grace@example.com", 2, 0.7)),
+            new CandidateMatch("Ada Lovelace", "ada@example.com", 1, 0.91, List.of(), List.of()),
+            new CandidateMatch("Grace Hopper", "grace@example.com", 2, 0.7, List.of(), List.of())),
         service(ranker).findCandidates(OFFER_ID));
   }
 
@@ -83,6 +83,51 @@ class CandidateMatchingServiceTest {
     when(ranker.rank(any(JobOffer.class))).thenReturn(List.of());
 
     assertEquals(List.of(), service(ranker).findCandidates(OFFER_ID));
+  }
+
+  @Test
+  void preservesExplanationFieldsWithTheirCandidateAfterSortingAndDeduplication() {
+    CandidateRanker ranker = mock(CandidateRanker.class);
+    when(ranker.loadJobOffer(OFFER_ID)).thenReturn(jobOffer());
+    when(ranker.rank(any(JobOffer.class)))
+        .thenReturn(
+            List.of(
+                new RankedCandidate(
+                    "Ada older",
+                    "ada@example.com",
+                    0.61,
+                    List.of("Old skill"),
+                    List.of("Old experience")),
+                new RankedCandidate(
+                    "Grace Hopper",
+                    "grace@example.com",
+                    0.7,
+                    List.of("COBOL"),
+                    List.of("Built compilers")),
+                new RankedCandidate(
+                    "Ada Lovelace",
+                    "ada@example.com",
+                    0.91,
+                    List.of("Java"),
+                    List.of("Built backend services"))));
+
+    assertEquals(
+        List.of(
+            new CandidateMatch(
+                "Ada Lovelace",
+                "ada@example.com",
+                1,
+                0.91,
+                List.of("Java"),
+                List.of("Built backend services")),
+            new CandidateMatch(
+                "Grace Hopper",
+                "grace@example.com",
+                2,
+                0.7,
+                List.of("COBOL"),
+                List.of("Built compilers"))),
+        service(ranker).findCandidates(OFFER_ID));
   }
 
   @Test
@@ -125,7 +170,8 @@ class CandidateMatchingServiceTest {
         IllegalStateException.class, () -> service(ranker).findCandidates(OFFER_ID));
 
     when(ranker.rank(any(JobOffer.class)))
-        .thenReturn(List.of(new RankedCandidate("Ada", "ada@example.com", null)));
+        .thenReturn(
+            List.of(new RankedCandidate("Ada", "ada@example.com", null, List.of(), List.of())));
     assertThrows(
         IllegalStateException.class, () -> service(ranker).findCandidates(OFFER_ID));
   }

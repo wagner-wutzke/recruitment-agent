@@ -33,9 +33,11 @@ public class CandidateMatchingService {
           || ranking.candidateName() == null
           || ranking.candidateName().isBlank()
           || ranking.candidateEmail() == null
-          || ranking.candidateEmail().isBlank()) {
+          || ranking.candidateEmail().isBlank()
+          || ranking.matchedSkills() == null
+          || ranking.relevantWorkExperiences() == null) {
         throw new IllegalStateException(
-            "Candidate matching returned an invalid candidate identity.");
+            "Candidate matching returned an invalid candidate result.");
       }
       validateProbability(ranking.matchingProbability());
       validRankings.add(ranking);
@@ -51,7 +53,9 @@ public class CandidateMatchingService {
                 ranking.candidateName(),
                 ranking.candidateEmail(),
                 0,
-                ranking.matchingProbability()));
+                ranking.matchingProbability(),
+                ranking.matchedSkills(),
+                ranking.relevantWorkExperiences()));
       }
     }
     return assignRankingPositions(matches);
@@ -75,7 +79,9 @@ public class CandidateMatchingService {
               match.candidateName(),
               match.candidateEmail(),
               index + 1,
-              match.matchingProbability()));
+              match.matchingProbability(),
+              match.matchedSkills(),
+              match.relevantWorkExperiences()));
     }
     return List.copyOf(positionedMatches);
   }

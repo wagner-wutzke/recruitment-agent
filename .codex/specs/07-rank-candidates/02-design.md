@@ -44,9 +44,10 @@ Use the existing `candidate.matching` configuration properties:
 |-------------------------------------------|--------------------------------------------------|---------------------------------------------------------------------|
 | `candidate.matching.model`                | `gpt-6-luna`                                     | Spring AI chat model used to evaluate and rank retrieved candidates |
 | `candidate.matching.similarity-threshold` | `0.6`                                            | Inclusive Vector Store retrieval threshold; valid range is `[0,1]`  |
+| `candidate.matching.top-k`                | `3`                                              | Maximum number of resume documents retrieved per query; positive integer |
 | `candidate.matching.system-prompt-file`   | `classpath:prompts/candidate-ranking-system.txt` | Resource containing the LLM system prompt                           |
 
-All three values remain overridable through application properties or their corresponding
+All values remain overridable through application properties or their corresponding
 environment variables. The system-prompt property accepts a filesystem resource path (for example,
 `file:/etc/recruitment-agent/candidate-ranking-system.txt`). `CandidateMatchingChatConfiguration`
 injects this value as a Spring `Resource`, verifies it is readable and non-empty using UTF-8, and

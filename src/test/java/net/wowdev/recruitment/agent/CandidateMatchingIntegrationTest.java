@@ -44,7 +44,14 @@ class CandidateMatchingIntegrationTest {
                 "Remote",
                 "Remote"));
     when(candidateRanker.rank(org.mockito.ArgumentMatchers.any()))
-        .thenReturn(List.of(new RankedCandidate(candidateName, CANDIDATE_EMAIL, 0.87)));
+        .thenReturn(
+            List.of(
+                new RankedCandidate(
+                    candidateName,
+                    CANDIDATE_EMAIL,
+                    0.87,
+                    List.of("Java", "Spring Boot"),
+                    List.of("Delivered reliable cloud services."))));
 
     mockMvc
         .perform(
@@ -55,7 +62,38 @@ class CandidateMatchingIntegrationTest {
         .andExpect(jsonPath("$[0].candidateName").value(candidateName))
         .andExpect(jsonPath("$[0].candidateEmail").value(CANDIDATE_EMAIL))
         .andExpect(jsonPath("$[0].rankingPosition").value(1))
-        .andExpect(jsonPath("$[0].matchingProbability").value(0.87));
+        .andExpect(jsonPath("$[0].matchingProbability").value(0.87))
+        .andExpect(jsonPath("$[0].matchedSkills[0]").value("Java"))
+        .andExpect(jsonPath("$[0].matchedSkills[1]").value("Spring Boot"))
+        .andExpect(
+            jsonPath("$[0].relevantWorkExperiences[0]")
+                .value("Delivered reliable cloud services."));
+  }
+
+  @Test
+  void mapsInvalidExplanationResponseToExistingMatchingFailure() throws Exception {
+    when(candidateRanker.loadJobOffer(JOB_OFFER_ID))
+        .thenReturn(
+            new JobOffer(
+                JOB_OFFER_ID,
+                "Java Platform Engineer",
+                "Build reliable cloud services with Java and distributed systems",
+                "Spring Boot, Kubernetes, and event processing experience",
+                "Remote",
+                "Remote"));
+    when(candidateRanker.rank(org.mockito.ArgumentMatchers.any()))
+        .thenReturn(
+            List.of(
+                new RankedCandidate(
+                    "Model Returned Candidate", CANDIDATE_EMAIL, 0.87, null, List.of())));
+
+    mockMvc
+        .perform(
+            post("/api/candidate-matches")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"jobOfferId\":\"" + JOB_OFFER_ID + "\"}"))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.code").value("CANDIDATE_MATCHING_FAILED"));
   }
 
 }

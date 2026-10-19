@@ -271,7 +271,7 @@ h1 {
 .offer-list {
   display: grid;
   gap: 9px;
-  max-height: 360px;
+  max-height: 420px;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 2px 8px 2px 2px;
@@ -349,7 +349,7 @@ h1 {
 .details-panel {
   margin-left: auto;
   min-height: 415px;
-  max-height: calc(100vh - 300px);
+  max-height: calc(100vh - (100vh * 0.39));
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-color: var(--blue) var(--surface-tint);
@@ -445,10 +445,6 @@ h1 {
   color: var(--sky-deep);
 }
 
-.search-results h2 {
-  margin-bottom: 18px;
-}
-
 .search-results-list {
   display: grid;
   gap: 10px;
@@ -460,6 +456,68 @@ h1 {
   border-left: 3px solid var(--sky);
   border-radius: 5px 13px 13px 5px;
   padding: 14px 16px;
+}
+
+.candidate-match-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.candidate-match-actions {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.candidate-resume-link {
+  align-items: center;
+  color: var(--danger);
+  display: inline-flex;
+  font-family: var(--mono-font);
+  font-size: .68rem;
+  gap: 5px;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.candidate-resume-link:hover,
+.candidate-resume-link:focus-visible {
+  color: #782c23;
+  text-decoration: underline;
+}
+
+.candidate-resume-link svg {
+  fill: #fff;
+  height: 20px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1;
+  width: 17px;
+}
+
+.candidate-resume-link svg text {
+  fill: currentColor;
+  font-family: var(--mono-font);
+  font-size: 3.2px;
+  font-weight: 700;
+  stroke: none;
+}
+
+.candidate-match > strong {
+  margin-top: 8px;
+  text-align: left;
+}
+
+.candidate-contact-row {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 4px;
 }
 
 .candidate-match strong,
@@ -477,7 +535,6 @@ h1 {
   font-family: var(--mono-font);
   font-size: .72rem;
   font-weight: 700;
-  margin-bottom: 8px;
   padding: 3px 9px;
   width: fit-content;
 }
@@ -491,7 +548,7 @@ h1 {
   color: var(--muted);
   font-family: var(--mono-font);
   font-size: .75rem;
-  margin-top: 5px;
+  min-width: 0;
 }
 
 .candidate-match .candidate-probability {
@@ -499,7 +556,64 @@ h1 {
   font-family: var(--mono-font);
   font-size: .75rem;
   font-weight: 600;
-  margin-top: 8px;
+  margin-top: 0;
+  text-align: right;
+}
+
+.candidate-explanations-link {
+  background: transparent;
+  border: 0;
+  color: var(--sky-deep);
+  font: inherit;
+  padding: 4px 0 4px 8px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.candidate-explanations-link:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--sky-deep);
+  outline-offset: 3px;
+}
+
+.candidate-explanation-content {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgb(23 78 112 / 22%);
+}
+
+.candidate-explanation-content .modal-body section + section {
+  margin-top: 24px;
+}
+
+.candidate-explanation-content .modal-body h3 {
+  color: var(--sky-deep);
+  font-family: var(--display-font);
+  font-size: 1.05rem;
+  margin-bottom: 10px;
+}
+
+.candidate-explanation-content .modal-body li {
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.candidate-explanation-probability {
+  color: var(--blue-deep);
+  font-family: var(--mono-font);
+  font-weight: 600;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 520px) {
+  .candidate-contact-row {
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .candidate-match .candidate-probability {
+    text-align: left;
+  }
 }
 
 .btn {

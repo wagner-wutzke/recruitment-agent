@@ -34,7 +34,7 @@ relationships, in addition to exact keyword matches.
 Rank candidates by a total match score based on the comparison of job requirements and resume skills
 and experience. In the initial version, use this criterion as the default ranking method.
 
-## F08 — Explain candidate recommendations
+## F07 — Explain candidate recommendations
 
 For each recommended candidate, display the information supporting the ranking: matched skills,
 relevant work experience, and overall score.

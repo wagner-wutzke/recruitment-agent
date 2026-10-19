@@ -7,6 +7,7 @@ public class CandidateMatchingProperties {
 
   private String model = "gpt-6-luna";
   private double similarityThreshold = 0.6;
+  private int topK = 3;
 
   public String getModel() {
     return model;
@@ -30,5 +31,16 @@ public class CandidateMatchingProperties {
       throw new IllegalArgumentException("Similarity threshold must be in the range [0,1]");
     }
     this.similarityThreshold = similarityThreshold;
+  }
+
+  public int getTopK() {
+    return topK;
+  }
+
+  public void setTopK(int topK) {
+    if (topK < 1) {
+      throw new IllegalArgumentException("Candidate matching topK must be positive");
+    }
+    this.topK = topK;
   }
 }

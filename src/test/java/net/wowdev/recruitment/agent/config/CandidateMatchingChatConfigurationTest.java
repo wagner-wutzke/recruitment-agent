@@ -101,7 +101,15 @@ class CandidateMatchingChatConfigurationTest {
     assertTrue(normalizedUserPrompt.contains("candidateName"));
     assertTrue(normalizedUserPrompt.contains("candidateEmail"));
     assertTrue(normalizedUserPrompt.contains("finite decimal from 0 to 1 inclusive"));
-    assertTrue(normalizedUserPrompt.contains("Return an empty array"));
+    assertTrue(normalizedUserPrompt.contains("matchedSkills"));
+    assertTrue(normalizedUserPrompt.contains("relevantWorkExperiences"));
+    assertTrue(normalizedUserPrompt.contains("must be an array of strings"));
+    assertTrue(normalizedUserPrompt.contains("Do not invent skills"));
+    assertTrue(
+        normalizedUserPrompt.contains(
+            "must provide evidence that supports the candidate's matchingProbability"));
+    assertTrue(normalizedUserPrompt.contains("Return an empty array for either explanation field"));
+    assertTrue(normalizedUserPrompt.contains("empty rankedCandidates array"));
   }
 
   private ChatClient.Builder configuredBuilder() {

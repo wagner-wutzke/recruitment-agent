@@ -8,6 +8,7 @@ const findCandidatesButton = document.querySelector("#find-candidates");
 const searchResultsPanel = document.querySelector("#search-results-panel");
 const searchResultsStatus = document.querySelector("#search-results-status");
 const searchResultsList = document.querySelector("#search-results-list");
+const candidateExplanationModal = document.querySelector("#candidate-explanation-modal");
 const modalElement = document.querySelector("#offer-modal");
 const resumeModalElement = document.querySelector("#resume-modal");
 const resumeForm = document.querySelector("#resume-form");
@@ -43,6 +44,7 @@ let originalValues = null;
 let saveAttempted = false;
 let modalInstance;
 let resumeModalInstance;
+let candidateExplanationModalInstance;
 
 function setText(selector, value) {
   document.querySelector(selector).textContent = value ?? "";
@@ -73,6 +75,7 @@ function isDirty() {
 }
 
 function selectOffer(offer) {
+  candidateExplanationModalInstance?.hide();
   selectedOfferId = offer.id;
   findCandidatesButton.disabled = false;
   searchResultsPanel.classList.add("d-none");
@@ -148,9 +151,28 @@ function displaySearchResults(candidates) {
   candidates.forEach((candidate, index) => {
     const item = document.createElement("li");
     item.className = "candidate-match";
+    const matchHeading = document.createElement("div");
+    matchHeading.className = "candidate-match-heading";
     const position = document.createElement("span");
     position.className = "candidate-position";
     position.textContent = `#${candidate.rankingPosition ?? index + 1}`;
+    const explanations = document.createElement("button");
+    explanations.className = "candidate-explanations-link";
+    explanations.type = "button";
+    explanations.textContent = "Explanations";
+    explanations.setAttribute(
+        "aria-label", `Explanations for ${candidate.candidateName ?? "candidate"}`);
+    explanations.addEventListener("click", () => openCandidateExplanation(candidate));
+    const resumeLink = document.createElement("a");
+    resumeLink.className = "candidate-resume-link";
+    resumeLink.href = `/api/resumes/${encodeURIComponent(candidate.candidateEmail ?? "")}/file`;
+    resumeLink.setAttribute(
+        "aria-label", `Download resume PDF for ${candidate.candidateName ?? "candidate"}`);
+    resumeLink.innerHTML = '<svg aria-hidden="true" viewBox="0 0 16 16" focusable="false"><path d="M3 1.5h6l4 4v9H3z"/><path d="M9 1.5v4h4M4.5 10.5h7"/><text x="4.2" y="9.6">PDF</text></svg><span>Resume PDF</span>';
+    const matchActions = document.createElement("div");
+    matchActions.className = "candidate-match-actions";
+    matchActions.append(explanations, resumeLink);
+    matchHeading.append(position, matchActions);
     const name = document.createElement("strong");
     name.textContent = candidate.candidateName ?? "Unnamed candidate";
     const email = document.createElement("span");
@@ -164,9 +186,62 @@ function displaySearchResults(candidates) {
     score.textContent = Number.isFinite(probability) && probability >= 0 && probability <= 1
         ? `Estimated match probability: ${Math.round(probability * 100)}%`
         : "Estimated match probability unavailable";
-    item.append(position, name, email, score);
+    const contactRow = document.createElement("div");
+    contactRow.className = "candidate-contact-row";
+    contactRow.append(email, score);
+    item.append(matchHeading, name, contactRow);
     searchResultsList.append(item);
   });
+}
+
+function openCandidateExplanation(candidate) {
+  setText("#candidate-explanation-title", candidate.candidateName ?? "Candidate explanation");
+  const probability = Number(candidate.matchingProbability);
+  setText(
+      "#candidate-explanation-probability",
+      Number.isFinite(probability) && probability >= 0 && probability <= 1
+          ? `Estimated match probability: ${Math.round(probability * 100)}%`
+          : "Estimated match probability unavailable",
+  );
+  renderExplanationItems("#matched-skills-list", candidate.matchedSkills);
+  renderExplanationItems("#relevant-experiences-list", candidate.relevantWorkExperiences);
+  candidateExplanationModalInstance ??= window.bootstrap?.Modal.getOrCreateInstance(
+      candidateExplanationModal,
+      {backdrop: "static", keyboard: false},
+  ) ?? fallbackCandidateExplanationModal();
+  candidateExplanationModalInstance.show();
+}
+
+function renderExplanationItems(selector, items) {
+  const list = document.querySelector(selector);
+  list.replaceChildren();
+  const supportedItems = Array.isArray(items) ? items : [];
+  if (supportedItems.length === 0) {
+    const emptyItem = document.createElement("li");
+    emptyItem.textContent = "No supporting evidence identified.";
+    list.append(emptyItem);
+    return;
+  }
+  supportedItems.forEach((value) => {
+    const item = document.createElement("li");
+    item.textContent = value;
+    list.append(item);
+  });
+}
+
+function fallbackCandidateExplanationModal() {
+  return {
+    show() {
+      candidateExplanationModal.classList.add("show");
+      candidateExplanationModal.style.display = "block";
+      candidateExplanationModal.removeAttribute("aria-hidden");
+    },
+    hide() {
+      candidateExplanationModal.classList.remove("show");
+      candidateExplanationModal.style.display = "none";
+      candidateExplanationModal.setAttribute("aria-hidden", "true");
+    },
+  };
 }
 
 async function findCandidates() {
@@ -333,6 +408,8 @@ function hideDiscardDialog() {
 
 document.querySelector("#new-offer").addEventListener("click", () => openForm());
 findCandidatesButton.addEventListener("click", findCandidates);
+document.querySelector("#candidate-explanation-close").addEventListener("click",
+    () => candidateExplanationModalInstance?.hide());
 document.querySelector("#upload-resume").addEventListener("click", openResumeForm);
 document.querySelector("#cancel-resume").addEventListener("click",
     () => resumeModalInstance?.hide());

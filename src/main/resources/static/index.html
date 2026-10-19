@@ -83,11 +83,10 @@
               <p id="detail-allocation"></p></section>
           </div>
         </article>
-        <section aria-labelledby="search-results-heading" aria-live="polite"
+        <section aria-label="Candidate matching results" aria-live="polite"
                  class="search-results d-none"
                  id="search-results-panel">
           <p class="eyebrow">CANDIDATE RANKING</p>
-          <h2 id="search-results-heading">Matches Panel</h2>
           <p class="state-message" id="search-results-status" role="status"></p>
           <ul class="search-results-list list-unstyled mb-0" id="search-results-list"></ul>
         </section>
@@ -167,6 +166,34 @@
           <button class="btn btn-primary" id="save-offer" type="submit">Save</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<div aria-hidden="true" aria-labelledby="candidate-explanation-title"
+     class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false"
+     id="candidate-explanation-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content candidate-explanation-content">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">MATCH EXPLANATION</p>
+          <h2 class="modal-title" id="candidate-explanation-title"></h2>
+        </div>
+        <button aria-label="Close explanation" class="btn-close"
+                id="candidate-explanation-close" type="button"></button>
+      </div>
+      <div class="modal-body" id="candidate-explanation-body">
+        <p class="candidate-explanation-probability" id="candidate-explanation-probability"></p>
+        <section aria-labelledby="matched-skills-heading">
+          <h3 id="matched-skills-heading">Matched skills</h3>
+          <ul id="matched-skills-list"></ul>
+        </section>
+        <section aria-labelledby="relevant-experiences-heading">
+          <h3 id="relevant-experiences-heading">Relevant work experiences</h3>
+          <ul id="relevant-experiences-list"></ul>
+        </section>
+      </div>
     </div>
   </div>
 </div>

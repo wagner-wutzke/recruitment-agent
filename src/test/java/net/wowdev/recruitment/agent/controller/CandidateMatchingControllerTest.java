@@ -34,7 +34,15 @@ class CandidateMatchingControllerTest {
   @Test
   void returnsMatchingCandidates() throws Exception {
     when(candidateMatchingService.findCandidates("offer-1"))
-        .thenReturn(List.of(new CandidateMatch("Ada Lovelace", "ada@example.com", 1, 0.91)));
+        .thenReturn(
+            List.of(
+                new CandidateMatch(
+                    "Ada Lovelace",
+                    "ada@example.com",
+                    1,
+                    0.91,
+                    List.of("Java", "Spring Boot"),
+                    List.of("Built backend services."))));
 
     mockMvc
         .perform(
@@ -45,7 +53,11 @@ class CandidateMatchingControllerTest {
         .andExpect(jsonPath("$[0].candidateName").value("Ada Lovelace"))
         .andExpect(jsonPath("$[0].candidateEmail").value("ada@example.com"))
         .andExpect(jsonPath("$[0].rankingPosition").value(1))
-        .andExpect(jsonPath("$[0].matchingProbability").value(0.91));
+        .andExpect(jsonPath("$[0].matchingProbability").value(0.91))
+        .andExpect(jsonPath("$[0].matchedSkills[0]").value("Java"))
+        .andExpect(jsonPath("$[0].matchedSkills[1]").value("Spring Boot"))
+        .andExpect(
+            jsonPath("$[0].relevantWorkExperiences[0]").value("Built backend services."));
 
     verify(candidateMatchingService).findCandidates(eq("offer-1"));
   }

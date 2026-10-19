@@ -10,6 +10,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -57,8 +58,18 @@ class OpenAiCandidateRankerTest {
       JobOfferRepository offers,
       VectorStore vectorStore,
       double similarityThreshold) {
+    return ranker(chatClient, offers, vectorStore, similarityThreshold, 3);
+  }
+
+  private static OpenAiCandidateRanker ranker(
+      ChatClient chatClient,
+      JobOfferRepository offers,
+      VectorStore vectorStore,
+      double similarityThreshold,
+      int topK) {
     CandidateMatchingProperties properties = new CandidateMatchingProperties();
     properties.setSimilarityThreshold(similarityThreshold);
+    properties.setTopK(topK);
     OpenAiCandidateRanker ranker =
         new OpenAiCandidateRanker(chatClient, offers, vectorStore, properties);
     ReflectionTestUtils.setField(
@@ -86,12 +97,26 @@ class OpenAiCandidateRankerTest {
     ChatClient chatClient = mock(ChatClient.class);
     VectorStore vectorStore = mock(VectorStore.class);
     ChatClient.ChatClientRequestSpec request =
-        stubChat(chatClient, List.of(new RankedCandidate(CANDIDATE_NAME, CANDIDATE_EMAIL, 0.93)));
+        stubChat(
+            chatClient,
+            List.of(
+                new RankedCandidate(
+                    CANDIDATE_NAME,
+                    CANDIDATE_EMAIL,
+                    0.93,
+                    List.of("Java"),
+                    List.of("Built backend services."))));
     OpenAiCandidateRanker ranker =
-        ranker(chatClient, mock(JobOfferRepository.class), vectorStore, 0.82);
+        ranker(chatClient, mock(JobOfferRepository.class), vectorStore, 0.82, 7);
 
     assertEquals(
-        List.of(new RankedCandidate(CANDIDATE_NAME, CANDIDATE_EMAIL, 0.93)),
+        List.of(
+            new RankedCandidate(
+                CANDIDATE_NAME,
+                CANDIDATE_EMAIL,
+                0.93,
+                List.of("Java"),
+                List.of("Built backend services."))),
         ranker.rank(jobOffer()));
 
     ArgumentCaptor<String> query = ArgumentCaptor.forClass(String.class);
@@ -122,6 +147,7 @@ class OpenAiCandidateRankerTest {
     ArgumentCaptor<SearchRequest> searchRequest = ArgumentCaptor.forClass(SearchRequest.class);
     verify(vectorStore).similaritySearch(searchRequest.capture());
     assertEquals(0.82, searchRequest.getValue().getSimilarityThreshold());
+    assertEquals(7, searchRequest.getValue().getTopK());
   }
 
   @Test
@@ -130,8 +156,8 @@ class OpenAiCandidateRankerTest {
     stubChat(
         chatClient,
         List.of(
-            new RankedCandidate("Candidate at zero", "zero@example.com", 0.0),
-            new RankedCandidate("Candidate at one", "one@example.com", 1.0)));
+            new RankedCandidate("Candidate at zero", "zero@example.com", 0.0, List.of(), List.of()),
+            new RankedCandidate("Candidate at one", "one@example.com", 1.0, List.of(), List.of())));
 
     assertEquals(2, ranker(chatClient, mock(JobOfferRepository.class)).rank(jobOffer()).size());
 
@@ -205,14 +231,8 @@ class OpenAiCandidateRankerTest {
 
     when(response.entity(CandidateRankingResponse.class))
         .thenReturn(
-            new CandidateRankingResponse(List.of(new RankedCandidate(" ", CANDIDATE_EMAIL, 0.5))));
-    assertThrows(
-        IllegalStateException.class,
-        () -> ranker(chatClient, mock(JobOfferRepository.class)).rank(jobOffer()));
-
-    when(response.entity(CandidateRankingResponse.class))
-        .thenReturn(
-            new CandidateRankingResponse(List.of(new RankedCandidate(CANDIDATE_NAME, " ", 0.5))));
+            new CandidateRankingResponse(
+                List.of(new RankedCandidate(" ", CANDIDATE_EMAIL, 0.5, List.of(), List.of()))));
     assertThrows(
         IllegalStateException.class,
         () -> ranker(chatClient, mock(JobOfferRepository.class)).rank(jobOffer()));
@@ -220,7 +240,7 @@ class OpenAiCandidateRankerTest {
     when(response.entity(CandidateRankingResponse.class))
         .thenReturn(
             new CandidateRankingResponse(
-                List.of(new RankedCandidate(CANDIDATE_NAME, CANDIDATE_EMAIL, Double.NaN))));
+                List.of(new RankedCandidate(CANDIDATE_NAME, " ", 0.5, List.of(), List.of()))));
     assertThrows(
         IllegalStateException.class,
         () -> ranker(chatClient, mock(JobOfferRepository.class)).rank(jobOffer()));
@@ -228,7 +248,13 @@ class OpenAiCandidateRankerTest {
     when(response.entity(CandidateRankingResponse.class))
         .thenReturn(
             new CandidateRankingResponse(
-                List.of(new RankedCandidate(CANDIDATE_NAME, CANDIDATE_EMAIL, 1.01))));
+                List.of(
+                    new RankedCandidate(
+                        CANDIDATE_NAME,
+                        CANDIDATE_EMAIL,
+                        0.5,
+                        null,
+                        List.of("Built backend services.")))));
     assertThrows(
         IllegalStateException.class,
         () -> ranker(chatClient, mock(JobOfferRepository.class)).rank(jobOffer()));
@@ -236,7 +262,43 @@ class OpenAiCandidateRankerTest {
     when(response.entity(CandidateRankingResponse.class))
         .thenReturn(
             new CandidateRankingResponse(
-                List.of(new RankedCandidate(CANDIDATE_NAME, CANDIDATE_EMAIL, null))));
+                List.of(
+                    new RankedCandidate(
+                        CANDIDATE_NAME,
+                        CANDIDATE_EMAIL,
+                        0.5,
+                        List.of("Java"),
+                        null))));
+    assertThrows(
+        IllegalStateException.class,
+        () -> ranker(chatClient, mock(JobOfferRepository.class)).rank(jobOffer()));
+
+    when(response.entity(CandidateRankingResponse.class))
+        .thenReturn(
+            new CandidateRankingResponse(
+                List.of(
+                    new RankedCandidate(
+                        CANDIDATE_NAME, CANDIDATE_EMAIL, Double.NaN, List.of(), List.of()))));
+    assertThrows(
+        IllegalStateException.class,
+        () -> ranker(chatClient, mock(JobOfferRepository.class)).rank(jobOffer()));
+
+    when(response.entity(CandidateRankingResponse.class))
+        .thenReturn(
+            new CandidateRankingResponse(
+                List.of(
+                    new RankedCandidate(
+                        CANDIDATE_NAME, CANDIDATE_EMAIL, 1.01, List.of(), List.of()))));
+    assertThrows(
+        IllegalStateException.class,
+        () -> ranker(chatClient, mock(JobOfferRepository.class)).rank(jobOffer()));
+
+    when(response.entity(CandidateRankingResponse.class))
+        .thenReturn(
+            new CandidateRankingResponse(
+                List.of(
+                    new RankedCandidate(
+                        CANDIDATE_NAME, CANDIDATE_EMAIL, null, List.of(), List.of()))));
     assertThrows(
         IllegalStateException.class,
         () -> ranker(chatClient, mock(JobOfferRepository.class)).rank(jobOffer()));
@@ -250,5 +312,28 @@ class OpenAiCandidateRankerTest {
 
     assertEquals(jobOffer(), ranker.loadJobOffer(OFFER_ID));
     assertThrows(NoSuchElementException.class, () -> ranker.loadJobOffer("missing"));
+  }
+
+  @Test
+  void mapsExplanationFieldsFromStructuredJsonResponse() throws Exception {
+    String json = """
+        {"rankedCandidates":[{"candidateName":"Ada Lovelace",
+        "candidateEmail":"ada@example.com","matchingProbability":0.93,
+        "matchedSkills":["Java","Spring Boot"],
+        "relevantWorkExperiences":["Built backend services."]}]}
+        """;
+
+    CandidateRankingResponse response =
+        new ObjectMapper().readValue(json, CandidateRankingResponse.class);
+
+    assertEquals(
+        List.of(
+            new RankedCandidate(
+                CANDIDATE_NAME,
+                CANDIDATE_EMAIL,
+                0.93,
+                List.of("Java", "Spring Boot"),
+                List.of("Built backend services."))),
+        response.rankedCandidates());
   }
 }

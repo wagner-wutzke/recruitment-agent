@@ -1,7 +1,18 @@
-Compare semantic meaning and Candidates position, technical skills, country, city, working mode,
-and professional experience.
+Compare semantic meaning of given job offer and candidates position, technical skills, country,
+city, working mode, and professional experience.
 Return the candidates ranked from highest to lowest overall relevance.
 
-Each item must contain candidateName, candidateEmail, and matchingProbability (a finite decimal
-from 0 to 1 inclusive), copied from the corresponding retrieved resume evidence.
-Return an empty array when no retrieved candidate is a meaningful match.
+Each item must contain candidateName, candidateEmail, matchingProbability (a finite decimal
+from 0 to 1 inclusive), matchedSkills, and relevantWorkExperiences. Copy candidateName and
+candidateEmail from the corresponding retrieved resume evidence. matchingProbability is the
+candidate's overall match estimate; do not return a separate score.
+
+matchedSkills must be an array of strings naming only skills supported by that candidate's retrieved
+resume and relevant to the job criteria. relevantWorkExperiences must be an array of strings that
+describe resume-supported experience and how it relates to the job criteria. Together, these fields
+must provide evidence that supports the candidate's matchingProbability without introducing a
+separate score. Do not invent skills, qualifications, employers, responsibilities, or work history.
+Return an empty array for either explanation field when the retrieved evidence does not support an
+item for it.
+
+Return an empty rankedCandidates array when no retrieved candidate is a meaningful match.

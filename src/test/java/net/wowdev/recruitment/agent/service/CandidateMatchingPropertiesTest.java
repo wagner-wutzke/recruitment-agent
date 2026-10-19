@@ -20,6 +20,7 @@ class CandidateMatchingPropertiesTest {
 
     assertEquals("gpt-6-luna", properties.getModel());
     assertEquals(0.6, properties.getSimilarityThreshold());
+    assertEquals(3, properties.getTopK());
   }
 
   @Test
@@ -27,7 +28,8 @@ class CandidateMatchingPropertiesTest {
     Map<String, Object> values =
         Map.of(
             "candidate.matching.model", "gpt-6.1-sol",
-            "candidate.matching.similarity-threshold", "0.75");
+            "candidate.matching.similarity-threshold", "0.75",
+            "candidate.matching.top-k", "8");
     CandidateMatchingProperties properties =
         new Binder(new MapConfigurationPropertySource(values))
             .bind("candidate.matching", Bindable.of(CandidateMatchingProperties.class))
@@ -35,6 +37,7 @@ class CandidateMatchingPropertiesTest {
 
     assertEquals("gpt-6.1-sol", properties.getModel());
     assertEquals(0.75, properties.getSimilarityThreshold());
+    assertEquals(8, properties.getTopK());
   }
 
   @Test
@@ -48,6 +51,9 @@ class CandidateMatchingPropertiesTest {
     assertEquals(
         "${CANDIDATE_MATCHING_SIMILARITY_THRESHOLD:0.6}",
         applicationProperties.getProperty("candidate.matching.similarity-threshold"));
+    assertEquals(
+        "${CANDIDATE_MATCHING_TOP_K:3}",
+        applicationProperties.getProperty("candidate.matching.top-k"));
   }
 
   @Test
@@ -58,6 +64,14 @@ class CandidateMatchingPropertiesTest {
     assertThrows(IllegalArgumentException.class, () -> properties.setSimilarityThreshold(1.01));
     assertThrows(
         IllegalArgumentException.class, () -> properties.setSimilarityThreshold(Double.NaN));
+  }
+
+  @Test
+  void rejectsNonPositiveTopK() {
+    CandidateMatchingProperties properties = new CandidateMatchingProperties();
+
+    assertThrows(IllegalArgumentException.class, () -> properties.setTopK(0));
+    assertThrows(IllegalArgumentException.class, () -> properties.setTopK(-1));
   }
 
   @Test
