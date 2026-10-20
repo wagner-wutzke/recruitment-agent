@@ -1,18 +1,18 @@
-Compare semantic meaning of given job offer and candidates position, technical skills, country,
-city, working mode, and professional experience.
-Return the candidates ranked from highest to lowest overall relevance.
+Compare semantic meaning of each retrieved candidate with the job offer using the same criteria:
+position, technical skills, professional experience, country, city, and working mode.
 
-Each item must contain candidateName, candidateEmail, matchingProbability (a finite decimal
-from 0 to 1 inclusive), matchedSkills, and relevantWorkExperiences. Copy candidateName and
-candidateEmail from the corresponding retrieved resume evidence. matchingProbability is the
-candidate's overall match estimate; do not return a separate score.
+Assess skills and experience against the job offer's responsibilities, required
+qualifications, and nice-to-have qualifications. Prefer evidence that directly
+supports a requirement; treat nice-to-have qualifications as additional evidence,
+not as substitutes for required qualifications.
 
-matchedSkills must be an array of strings naming only skills supported by that candidate's retrieved
-resume and relevant to the job criteria. relevantWorkExperiences must be an array of strings that
-describe resume-supported experience and how it relates to the job criteria. Together, these fields
-must provide evidence that supports the candidate's matchingProbability without introducing a
-separate score. Do not invent skills, qualifications, employers, responsibilities, or work history.
-Return an empty array for either explanation field when the retrieved evidence does not support an
-item for it.
+Use only facts supported by the retrieved resume evidence. Treat missing or
+unclear information as unknown; do not infer it. Apply location and working-mode
+constraints as eligibility rules only when the job offer states them explicitly.
+For an explicit non-remote role, include a candidate only if the resume supports
+the required country match. Do not assume that a candidate is eligible when
+required location evidence is missing.
 
-Return an empty rankedCandidates array when no retrieved candidate is a meaningful match.
+Rank eligible candidates by overall relevance, highest first. Return a candidate
+only when the evidence supports a meaningful match across the job criteria;
+keyword overlap alone is insufficient.
