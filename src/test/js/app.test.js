@@ -396,7 +396,7 @@ test("keeps layout dimensions responsive and contains actions in their panel", a
     assert.match(styles, /\.details-panel\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*1024px/s);
     assert.match(styles, /\.offer-list\s*\{[^}]*max-height:\s*360px;[^}]*overflow-y:\s*auto/s);
     assert.match(styles,
-        /\.details-panel\s*\{[^}]*max-height:\s*calc\(100vh\s*-\s*300px\);[^}]*overflow-y:\s*auto/s);
+        /\.details-panel\s*\{[^}]*max-height:\s*calc\(100vh\s*-\s*\(100vh\s*\*\s*0\.39\)\);[^}]*overflow-y:\s*auto/s);
     assert.match(styles, /\.action-panel\s*\{[^}]*max-width:\s*1480px;[^}]*width:\s*100%/s);
     assert.match(styles,
         /\.action-panel\s*\{[^}]*align-items:\s*center;[^}]*flex-wrap:\s*nowrap;[^}]*min-height:\s*56px;[^}]*overflow-x:\s*auto/s);
