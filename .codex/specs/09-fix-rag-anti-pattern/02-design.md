@@ -54,6 +54,12 @@ allocation/working mode. Use a `SearchRequest` against the existing `VectorStore
 configured inclusive similarity threshold and retrieval pool size. Retrieval pool size is a
 document/chunk limit, not a candidate count.
 
+The initial search discovers relevant candidates and their resume document IDs. For each discovered
+email/document ID pair, run a second Vector Store search filtered by both metadata values, using the
+same job query, no additional similarity cutoff, and `resume.indexing.max-num-chunks` as the per-
+resume result limit. This hydrates all indexed chunks for each discovered resume without widening
+candidate discovery beyond the configured initial retrieval pool.
+
 For every returned chunk:
 
 1. Read `candidateEmail` and `documentId` from its Vector Store metadata. Do not infer either value
@@ -150,7 +156,9 @@ per-candidate evidence budget.
 | `candidate.matching.final-ranking-prompt-file` | `classpath:prompts/candidate-ranking-final.txt` | Final-stage prompt resource                     |
 
 The 24,000-character evidence default accommodates a complete 20,000-character resume with modest
-headroom. Requests exceeding the evidence limit fail visibly; evidence is not silently truncated.
+headroom. Candidate-scoped hydration fetches up to the configured indexing chunk maximum, so the
+initial candidate discovery top-K does not truncate an individual discovered resume. Requests
+exceeding the evidence limit fail visibly; evidence is not silently truncated.
 Three candidates per map request and a three-candidate final shortlist cap worst-case resume content
 at about 72,000 characters per model request before prompt/JSON overhead. All integer limits must
 be positive. Enforce safe upper bounds for retrieval top K, batch size, shortlist size, evidence

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.service.matching.model.CandidateMatch;
@@ -48,7 +49,8 @@ public class CandidateMatchingService {
     Set<String> seenEmails = new HashSet<>();
     List<CandidateMatch> matches = new ArrayList<>();
     for (RankedCandidate ranking : validRankings) {
-      if (seenEmails.add(ranking.candidateEmail())) {
+      String normalizedEmail = ranking.candidateEmail().trim().toLowerCase(Locale.ROOT);
+      if (seenEmails.add(normalizedEmail)) {
         matches.add(
             new CandidateMatch(
                 ranking.candidateName(),

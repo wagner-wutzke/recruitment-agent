@@ -78,6 +78,23 @@ class CandidateMatchingServiceTest {
   }
 
   @Test
+  void deduplicatesEmailWithoutCaseSensitivityAndKeepsHighestProbability() {
+    CandidateRanker ranker = mock(CandidateRanker.class);
+    doReturn(jobOffer()).when(ranker).loadJobOffer(OFFER_ID);
+    when(ranker.rank(any(JobOffer.class)))
+        .thenReturn(
+            List.of(
+                candidate("Ada Old", "Ada@Example.com", 0.61),
+                candidate("Ada Lovelace", "ada@example.com", 0.91)));
+
+    assertEquals(
+        List.of(
+            new CandidateMatch(
+                "Ada Lovelace", "ada@example.com", 1, 0.91, List.of(), List.of())),
+        service(ranker).findCandidates(OFFER_ID));
+  }
+
+  @Test
   void returnsEmptyWhenRankerFindsNoMatches() {
     CandidateRanker ranker = mock(CandidateRanker.class);
     when(ranker.loadJobOffer(OFFER_ID)).thenReturn(jobOffer());

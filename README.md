@@ -107,8 +107,9 @@ it does not guarantee that a model's judgment is objectively correct.
 Candidate matching is split into bounded retrieval, map, and reduce stages.
 
 1. **Retrieve:** Build a search question from the selected job offer’s position, description,
-   qualifications, responsibilities, nice-to-have criteria, location, and working mode. Search
-   ChromaDB with a similarity threshold and configured chunk limit.
+   qualifications, responsibilities, nice-to-have criteria, location, and working mode. Use the
+   configured similarity threshold and chunk limit to discover candidates, then fetch all indexed
+   chunks for each discovered candidate’s current resume version (up to the resume index chunk cap).
 2. **Assemble evidence:** Validate each result’s candidate and document metadata against the current
    MongoDB resume record, remove stale or duplicate chunks, and group evidence by candidate. This
    prevents an older indexed resume version from being ranked after an upload replaces it.
@@ -288,7 +289,7 @@ through Spring environment variables or properties.
 | `CANDIDATE_MATCHING_PIPELINE_MAP_BATCH_SIZE`                   | `3`                         | Candidates evaluated per map batch          |
 | `CANDIDATE_MATCHING_PIPELINE_SHORTLIST_SIZE`                   | `3`                         | Candidates passed to final ranking          |
 | `CANDIDATE_MATCHING_PIPELINE_MAX_CONCURRENCY`                  | `2`                         | Concurrent map requests                     |
-| `CANDIDATE_MATCHING_PIPELINE_MAX_EVIDENCE_CHARS_PER_CANDIDATE` | `20000`                     | Retrieved evidence limit per candidate      |
+| `CANDIDATE_MATCHING_PIPELINE_MAX_EVIDENCE_CHARS_PER_CANDIDATE` | `24000`                     | Retrieved evidence limit per candidate      |
 
 Retained PDFs are stored under `${user.home}/data/recruitment-agent/resume/`. Resume chunking can be
 adjusted with `RESUME_INDEXING_CHUNK_SIZE`, `RESUME_INDEXING_MIN_CHUNK_SIZE_CHARS`,
