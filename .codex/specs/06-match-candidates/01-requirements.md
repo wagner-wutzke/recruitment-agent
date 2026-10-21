@@ -1,6 +1,10 @@
-# Feature Spec: Ground Matching with RAG
+# Feature Spec: Match Candidates
 
-- **Status:** [ ] Draft | [ ] Approved for Design | [x] In Implementation | [ ] Completed
+> **Current scope:** This specification extends the earlier Vector Store-only retrieval baseline
+> with AI ranking grounded in retrieved resume evidence. The baseline is retained under
+> `.codex/specs/05-ground-matching-with-rag/` as historical context.
+
+- **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
 - **Author/Agent:** @architect
 - **Date:** 2026-10-17
 

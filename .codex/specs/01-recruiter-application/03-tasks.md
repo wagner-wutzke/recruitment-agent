@@ -1,15 +1,18 @@
-# Task List: Recruiter Application
+# Task List: Recruiter Application (Initial Read-Only Baseline)
 
-- **Status:** [x] Active | [ ] Paused | [x] Completed
+- **Status:** [ ] Active | [ ] Paused | [x] Completed
 - **Target Agent:** @engineer
 - **Validation Agent:** @reviewer
 - **References:** `01-requirements.md`, `02-design.md`
+
+> **Scope note:** These completed tasks establish only the initial read-only baseline. Later
+> implemented job-offer management is tracked in `.codex/specs/02-manage-job-position/`.
 
 ## Phase 1: Database & Model Layers
 
 - [x] **Task 1.1:** Initialize the Maven build for Java 21 and Spring Boot 4.1.1 with Spring Web,
   Spring Data MongoDB, and test dependencies.
-- [x] **Task 1.2:** Configure `spring.mongodb.uri` to read `MONGODB_URI`, with the local development
+- [x] **Task 1.2 (historical; current configuration differs):** Configure `spring.mongodb.uri` to read `MONGODB_URI`, with the local development
   URI as a fallback and no committed credentials.
 - [x] **Task 1.3:** Extend `document/JobOffer` to map MongoDB `_id` to `id` and include `jobName`,
   `jobDescription`, `requiredQualifications`, `location`, and `allocation`; add a focused mapping
@@ -56,5 +59,6 @@
   name, description, required qualifications, location, and allocation as text (**AC03, AC05**).
 - [x] **Task 4.7:** Add integration or browser-level coverage for application startup, populated and
   empty responses, selection details, and load failure (**AC01–AC05**).
-- [x] **Task 4.8:** Confirm the feature exposes no Job offer create, update, or delete UI or API
-  operations (Out of Scope).
+- [x] **Task 4.8 (initial baseline only):** Confirmed the initial feature exposed no Job offer
+  create, update, or delete UI or API operations. This constraint was superseded by
+  `.codex/specs/02-manage-job-position/`.

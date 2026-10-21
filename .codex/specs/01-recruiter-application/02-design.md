@@ -1,5 +1,10 @@
 # Technical Design: Recruiter Application
 
+> **Historical baseline:** This design covers the initial read-only application. Job-offer create
+> and edit behavior is specified by `.codex/specs/02-manage-job-position/`; current matching
+> behavior is specified by `.codex/specs/06-match-candidates/`,
+> `.codex/specs/07-rank-candidates/`, and `.codex/specs/09-fix-rag-anti-pattern/`.
+
 - **Status:** [ ] Draft | [x] Approved for Implementation
 - **Author/Agent:** @architect
 - **Reference Spec:** `01-requirements.md`

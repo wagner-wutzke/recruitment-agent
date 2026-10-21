@@ -1,6 +1,12 @@
-# Feature Spec: Ground Matching with RAG
+# Feature Spec: Ground Matching with RAG (Historical Retrieval Baseline)
 
-- **Status:** [ ] Draft | [ ] Approved for Design | [x] In Implementation | [ ] Completed
+> **Superseded behavior:** This initial matching proposal described Vector Store-only results and
+> prohibited LLM ranking. The implemented matching flow now uses retrieved resume evidence with
+> staged LLM ranking, as specified by `.codex/specs/06-match-candidates/`,
+> `.codex/specs/07-rank-candidates/`, and `.codex/specs/09-fix-rag-anti-pattern/`. This document is
+> retained as a record of the earlier design direction, not the current behavior.
+
+- **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed (superseded)
 - **Author/Agent:** @architect
 - **Date:** 2026-10-17
 
@@ -11,8 +17,8 @@ indexed resume data.
 
 ## 2. Business Rules
 
-- When searching for a matching candidate, use the Vector Store data to find a suitable candidate.
-- Do not use data from the LLM.
+- In this historical baseline, Vector Store search results were the matching output and the LLM was
+  not to generate candidate data. This approach was superseded by the later ranking specifications.
 
 ## 3. Functional Requirements
 

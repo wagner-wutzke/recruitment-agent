@@ -1,5 +1,9 @@
 # Feature Spec: MapReduce and Tiered Candidate Ranking
 
+> **Current ranking design:** This is the canonical specification for candidate ranking. It
+> supersedes the earlier single-call ranking design in `.codex/specs/07-rank-candidates/` while
+> preserving that feature's API and user-visible matching behavior.
+
 - **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
 - **Author/Agent:** @architect
 - **Date:** 2026-10-20

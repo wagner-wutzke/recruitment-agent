@@ -1,5 +1,9 @@
 # Technical Design: Ground Matching with RAG
 
+> **Historical design:** This describes the first Vector Store-only matching stage. It was
+> superseded by the staged LLM ranking designs in `.codex/specs/07-rank-candidates/` and
+> `.codex/specs/09-fix-rag-anti-pattern/`; use those documents for current behavior.
+
 - **Status:** [ ] Draft | [x] Approved for Implementation
 - **Author/Agent:** @architect
 - **Reference Spec:** `01-requirements.md`
@@ -8,8 +12,9 @@
 
 - Reuse the existing Spring Boot application, MongoDB repositories, Spring AI `VectorStore`,
   local ChromaDB collection, and local embedding model.
-- Candidate matching calls the Vector Store directly; it does not call an LLM or use generated
-  candidate facts.
+- In this historical design, candidate matching called the Vector Store directly without an LLM.
+  The current flow retains direct vector retrieval and adds bounded, evidence-validated LLM ranking
+  as specified by the later matching designs.
 - The existing static SPA invokes a new matching API using the selected job offer ID and displays
   the response in the existing details panel area.
 

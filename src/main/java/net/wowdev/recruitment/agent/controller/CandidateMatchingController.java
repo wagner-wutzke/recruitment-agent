@@ -45,7 +45,7 @@ public class CandidateMatchingController {
 
   @ExceptionHandler(NoSuchElementException.class)
   public ResponseEntity<ApiErrorResponse> handleJobOfferNotFound(NoSuchElementException ex) {
-    log.error("Job offer not found.  Error: {}", ex.getMessage());
+    log.warn("Candidate matching rejected because the requested job offer was not found.");
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
         .body(new ApiErrorResponse("JOB_OFFER_NOT_FOUND", "Job offer was not found."));
   }
@@ -53,7 +53,9 @@ public class CandidateMatchingController {
   @ExceptionHandler(CandidateMatchingUnavailableException.class)
   public ResponseEntity<ApiErrorResponse> handleMatchingFailure(
       CandidateMatchingUnavailableException ex) {
-    log.error("Candidate matching request failed. Error: {}", ex.getMessage());
+    log.error(
+        "Candidate matching request failed. Cause type: {}",
+        ex.getCause() == null ? "unknown" : ex.getCause().getClass().getSimpleName());
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
         .body(
             new ApiErrorResponse(
@@ -62,7 +64,7 @@ public class CandidateMatchingController {
 
   @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
   public ResponseEntity<ApiErrorResponse> handleInvalidRequest(Exception ex) {
-    log.error("Candidate matching request failed. Error: {}", ex.getMessage());
+    log.warn("Candidate matching request rejected because the request body was invalid.");
     return ResponseEntity.badRequest()
         .body(
             new ApiErrorResponse("INVALID_CANDIDATE_MATCH_REQUEST", "A job offer ID is required."));

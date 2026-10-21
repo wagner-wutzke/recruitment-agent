@@ -1,6 +1,6 @@
 # Task List: Match Candidates
 
-- **Status:** [x] Active | [ ] Paused | [x] Completed
+- **Status:** [ ] Active | [ ] Paused | [x] Completed
 - **Target Agent:** @engineer
 - **Validation Agent:** @reviewer
 - **References:** `01-requirements.md`, `02-design.md`
@@ -67,4 +67,3 @@
   labels, then rerun the complete browser suite.
 - **Reviewer decision:** APPROVAL WITHHELD until the full browser suite passes; request correction
   for the form-label-order test. No matching implementation gap was found.
-

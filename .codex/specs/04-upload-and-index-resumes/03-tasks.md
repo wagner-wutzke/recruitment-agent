@@ -1,6 +1,6 @@
 # Task List: Upload and Index Resumes
 
-- **Status:** [x] Active | [ ] Paused | [ ] Completed
+- **Status:** [ ] Active | [ ] Paused | [x] Completed
 - **Target Agent:** @engineer
 - **Validation Agent:** @reviewer
 - **References:** `01-requirements.md`, `02-design.md`
@@ -48,11 +48,11 @@
 
 ## Phase 7: Extract Candidate Email from PDF
 
-- [ ] **Task 7.1:** Remove Candidate Email from the upload form and multipart API contract; extract
+- [x] **Task 7.1:** Remove Candidate Email from the upload form and multipart API contract; extract
   the first valid email address in document order from parsed PDF text and use it as the MongoDB
   identity and Chroma metadata. Reject PDFs without a valid email. Add unit, controller, and browser
   tests for extraction, missing email, replacement, and submission without an email form field
-  (**AC1–5**).
+  (**AC1–5**). Current implementation includes this flow in `ResumePdfIndexer` and the upload API.
 - [ ] **Task 7.2:** Run the relevant Java and browser suites, verify upload/replacement and failure
   behavior against the updated criteria, and record verification/reviewer findings (**AC1–8**).
 

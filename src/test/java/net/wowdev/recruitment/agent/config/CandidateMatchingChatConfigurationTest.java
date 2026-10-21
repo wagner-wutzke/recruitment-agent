@@ -45,7 +45,7 @@ class CandidateMatchingChatConfigurationTest {
     ArgumentCaptor<Resource> resourceCaptor = ArgumentCaptor.forClass(Resource.class);
     ArgumentCaptor<Charset> charsetCaptor = ArgumentCaptor.forClass(Charset.class);
     verify(builder).defaultSystem(resourceCaptor.capture(), charsetCaptor.capture());
-    verify(builder).defaultAdvisors(any(Advisor[].class));
+    verify(builder, never()).defaultAdvisors(any(Advisor[].class));
     assertSame(systemPrompt, resourceCaptor.getValue());
     assertEquals(StandardCharsets.UTF_8, charsetCaptor.getValue());
   }
@@ -109,7 +109,6 @@ class CandidateMatchingChatConfigurationTest {
   private ChatClient.Builder configuredBuilder() {
     ChatClient.Builder builder = mock(ChatClient.Builder.class);
     when(builder.defaultSystem(any(Resource.class), any(Charset.class))).thenReturn(builder);
-    when(builder.defaultAdvisors(any(Advisor[].class))).thenReturn(builder);
     return builder;
   }
 

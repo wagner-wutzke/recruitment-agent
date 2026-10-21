@@ -1,9 +1,13 @@
-# Task List: Ground Matching with RAG
+# Task List: Ground Matching with RAG (Historical Retrieval Baseline)
 
-- **Status:** [ ] Draft | [x] Active | [ ] Paused | [ ] Completed
+- **Status:** [ ] Draft | [ ] Active | [ ] Paused | [x] Completed (superseded)
 - **Target Agent:** @engineer
 - **Validation Agent:** @reviewer
 - **References:** `01-requirements.md`, `02-design.md`
+
+> This task list records implementation of the initial Vector Store-only matching flow. Later
+> matching and ranking work supersedes its no-LLM behavior; see `.codex/specs/06-match-candidates/`,
+> `.codex/specs/07-rank-candidates/`, and `.codex/specs/09-fix-rag-anti-pattern/`.
 
 ## Phase 1: Matching Service
 

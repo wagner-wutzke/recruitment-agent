@@ -1,5 +1,8 @@
 # Feature Spec: 02-manage-job-position
 
+> **Current scope:** This is the canonical specification for job-offer management. The original
+> read-only baseline in `.codex/specs/01-recruiter-application/` is historical and superseded here.
+
 - **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
 - **Author/Agent:** @architect
 - **Date:** 2026-10-15

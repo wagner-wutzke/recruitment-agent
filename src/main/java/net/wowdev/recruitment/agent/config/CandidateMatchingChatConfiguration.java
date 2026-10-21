@@ -3,7 +3,6 @@ package net.wowdev.recruitment.agent.config;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +20,6 @@ public class CandidateMatchingChatConfiguration {
 
     return builder
         .defaultSystem(systemPrompt, StandardCharsets.UTF_8)
-        .defaultAdvisors(new SimpleLoggerAdvisor())
         .build();
   }
 

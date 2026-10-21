@@ -1,6 +1,6 @@
 # Feature Spec: Upload and Index Resumes
 
-- **Status:** [ ] Draft | [ ] Approved for Design | [x] In Implementation | [ ] Completed
+- **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
 - **Author/Agent:** @architect
 - **Date:** 2026-10-16
 
@@ -152,5 +152,7 @@ These scenarios must be validated by the `@reviewer`.
 
 - Enforcing a 5 MB PDF size limit and showing a custom error for larger files is out of scope.
 - OCR for scanned PDFs is out of scope; uploaded PDFs must contain extractable text.
-- Candidate search, ranking, recommendations, and matching are future features.
+- Candidate search, ranking, recommendations, and matching are outside this resume-upload feature's
+  scope. They are implemented and specified separately in `.codex/specs/06-match-candidates/`,
+  `.codex/specs/07-rank-candidates/`, and `.codex/specs/09-fix-rag-anti-pattern/`.
 - Listing resumes or adding a resume-management screen is out of scope.

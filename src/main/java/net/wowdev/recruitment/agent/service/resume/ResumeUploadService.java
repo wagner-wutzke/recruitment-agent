@@ -94,7 +94,7 @@ public class ResumeUploadService {
     } catch (RuntimeException exception) {
       LOGGER.log(
           System.Logger.Level.ERROR,
-          "Unable to remove replaced resume documents for " + previous.getCandidateEmail(),
+          "Unable to remove replaced resume documents; candidate identity omitted.",
           exception);
     }
   }

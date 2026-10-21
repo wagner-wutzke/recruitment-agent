@@ -56,15 +56,15 @@
   expects 1024 px and must be updated to the 600 px requirement. AC17–18: field order assertions in
   `src/test/js/app.test.js`.
 - **Verification:** `npm test` passes all 12 tests. The feature Java tests and
-  `RecruitmentApplicationIntegrationTest` pass. `mvn -q test` runs 24 tests but fails two tests in
-  `MongoConnectionPropertiesTest`, which is outside this feature; they expect
-  `spring.mongodb.uri`, while the corresponding setting in `application.properties` is commented
-  out.
+  `RecruitmentApplicationIntegrationTest` pass. At the time of this review, `mvn -q test` ran 24
+  tests and failed two `MongoConnectionPropertiesTest` checks because production Mongo URI config
+  was commented out. That configuration gap was subsequently fixed by wiring `MONGODB_URI` in
+  `src/main/resources/application.properties`; see the current configuration and tests.
 - **Gaps:** The Details panel implementation and its current test assertion use 1024 px, while the
   aligned requirements and design specify 600 px on desktop. Tasks 4.1–4.2 remain unchecked until
   the layout and its verification are brought into line. The full Maven suite also fails the two
   unrelated Mongo URI configuration tests.
-- **Improvement suggestions:** Correct the Mongo URI configuration/test mismatch in its own scope,
-  complete Tasks 4.1–4.2, then rerun the complete Maven suite.
+- **Improvement suggestions:** The Mongo URI configuration/test mismatch is resolved. Complete
+  Tasks 4.1–4.2, then rerun the complete Maven suite.
 - **Reviewer decision:** APPROVAL WITHHELD pending completion of Tasks 4.1–4.2 and a passing full
   Maven suite. Feature status remains Active.
