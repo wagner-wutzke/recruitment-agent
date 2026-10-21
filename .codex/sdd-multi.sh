@@ -50,7 +50,6 @@ if [ "$1" == "init" ] && [ -n "$2" ]; then
     touch "$TARGET_DIR/01-requirements.md"
     touch "$TARGET_DIR/02-design.md"
     touch "$TARGET_DIR/03-tasks.md"
-    touch "$TARGET_DIR/prompts.md"
 
     echo "✅ Successfully initialized '$TARGET_DIR/' with standard SDD file templates."
     exit 0
