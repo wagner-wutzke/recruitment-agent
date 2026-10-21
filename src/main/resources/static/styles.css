@@ -397,6 +397,20 @@ h1 {
   padding-top: 13px;
 }
 
+.search-results-status.is-searching::after {
+  animation: candidate-search-dots 1.2s steps(1, end) infinite;
+  content: "";
+  display: inline-block;
+  white-space: pre;
+}
+
+@keyframes candidate-search-dots {
+  0%, 100% { content: ""; }
+  25% { content: "."; }
+  50% { content: ".."; }
+  75% { content: "..."; }
+}
+
 .offer-details > h2 {
   font-size: 1.8rem;
   margin: 0 0 27px;

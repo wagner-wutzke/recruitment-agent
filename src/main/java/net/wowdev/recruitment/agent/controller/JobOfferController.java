@@ -7,7 +7,7 @@ import net.wowdev.recruitment.agent.dto.ApiErrorResponse;
 import net.wowdev.recruitment.agent.dto.JobOfferRequest;
 import net.wowdev.recruitment.agent.dto.JobOfferResponse;
 import net.wowdev.recruitment.agent.entity.JobOffer;
-import net.wowdev.recruitment.agent.service.JobOfferService;
+import net.wowdev.recruitment.agent.service.joboffer.JobOfferService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

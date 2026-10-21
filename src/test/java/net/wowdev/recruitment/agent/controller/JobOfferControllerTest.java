@@ -14,7 +14,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 
 import java.util.List;
 import net.wowdev.recruitment.agent.entity.JobOffer;
-import net.wowdev.recruitment.agent.service.JobOfferService;
+import net.wowdev.recruitment.agent.service.joboffer.JobOfferService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

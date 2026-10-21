@@ -7,21 +7,18 @@
 
 ## Follow-up: Configurable Retrieval Limit
 
-- [x] Bind `candidate.matching.top-k` with a default of `3`, reject non-positive values, and pass
-  the configured value to `VectorStoreDocumentRetriever`. Evidence: property tests cover default,
-  override, and invalid values; ranker test verifies configured topK is propagated to the actual
-  Vector Store `SearchRequest`; focused Maven tests pass.
+- [x] Bind the legacy `candidate.matching.top-k` property for compatibility. The staged MapReduce
+  pipeline supersedes its retrieval behavior and uses `candidate.matching.pipeline.retrieval-top-k`.
 
 ## Phase 1: Matching Configuration and External Prompt
 
 - [x] **Task 1.1:** Configure `CandidateMatchingChatConfiguration` to load the configured prompt as
-  a UTF-8 Spring `Resource`, reject unreadable or empty prompt files, and install the system prompt
-  plus `SimpleLoggerAdvisor` at `Ordered.LOWEST_PRECEDENCE`. Keep Vector Store/advisor wiring out of
-  the default ChatClient. Add configuration tests. Evidence:
-  `CandidateMatchingChatConfigurationTest`
-  covers classpath/filesystem prompts, invalid resources, and the default logger-only advisor.
+  a UTF-8 Spring `Resource`, reject unreadable or empty prompt files, and avoid advisors that log
+  full prompts or resume text. Keep Vector Store/pipeline wiring out of the default ChatClient.
+  Add configuration tests. Evidence: `CandidateMatchingChatConfigurationTest` covers
+  classpath/filesystem prompts, invalid resources, and absence of prompt logging.
 - [x] **Task 1.2:** Bind and validate `candidate.matching.model` and
-  `candidate.matching.similarity-threshold`; preserve defaults `gpt-6-luna` and `0.6`, property
+  `candidate.matching.similarity-threshold`; preserve defaults `gpt-6-luna` and `0.5`, property
   overrides, and the inclusive `[0,1]` threshold bounds. Test defaults, overrides, and invalid
   values. Evidence: `CandidateMatchingPropertiesTest` passes 6 tests, including application
   property placeholders and boundary/range behavior.
@@ -86,6 +83,11 @@
   failure without presenting failure as success. Evidence: browser tests cover empty and error
   states
   (**AC2**).
+- [x] **Task 4.3:** Animate zero-to-three decorative dots in the Matches Panel while ranking is
+  pending and stop on backend success or failure. Preserve the accessible status text. Evidence:
+  four focused browser tests verify pending animation/keyframes and cleanup after successful,
+  empty, and error responses. The full `npm test` run still has one unrelated pre-existing failure:
+  the responsive-layout test expects `.offer-list` height constraints absent from the current CSS.
 
 ## Phase 5: Integration and Review
 

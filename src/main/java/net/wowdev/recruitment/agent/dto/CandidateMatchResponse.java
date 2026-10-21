@@ -1,7 +1,7 @@
 package net.wowdev.recruitment.agent.dto;
 
 import java.util.List;
-import net.wowdev.recruitment.agent.service.CandidateMatch;
+import net.wowdev.recruitment.agent.service.matching.model.CandidateMatch;
 
 public record CandidateMatchResponse(
     String candidateName,

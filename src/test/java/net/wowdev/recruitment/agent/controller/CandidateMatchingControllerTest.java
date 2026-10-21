@@ -10,8 +10,8 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import net.wowdev.recruitment.agent.service.CandidateMatch;
-import net.wowdev.recruitment.agent.service.CandidateMatchingService;
+import net.wowdev.recruitment.agent.service.matching.model.CandidateMatch;
+import net.wowdev.recruitment.agent.service.matching.CandidateMatchingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

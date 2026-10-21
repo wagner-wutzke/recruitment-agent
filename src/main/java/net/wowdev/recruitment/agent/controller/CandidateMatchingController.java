@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.wowdev.recruitment.agent.dto.ApiErrorResponse;
 import net.wowdev.recruitment.agent.dto.CandidateMatchRequest;
 import net.wowdev.recruitment.agent.dto.CandidateMatchResponse;
-import net.wowdev.recruitment.agent.service.CandidateMatchingService;
+import net.wowdev.recruitment.agent.service.matching.CandidateMatchingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;

@@ -7,8 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 import net.wowdev.recruitment.agent.entity.JobOffer;
-import net.wowdev.recruitment.agent.service.CandidateRanker;
-import net.wowdev.recruitment.agent.service.RankedCandidate;
+import net.wowdev.recruitment.agent.service.matching.CandidateRanker;
+import net.wowdev.recruitment.agent.service.matching.model.RankedCandidate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -33,9 +33,11 @@ The candidates list is ordered with the highest-ranked candidate first.
 - Store the LLM system prompt in a separate text file. Configure its resource path through
   `candidate.matching.system-prompt-file` in application properties, so the prompt can be changed
   without modifying Java source.
-- Configure the maximum number of resume documents retrieved per matching query through the
-  `candidate.matching.top-k` application property. It must default to the existing value of `3`
-  and accept only positive integers.
+- Keep `candidate.matching.top-k` at its legacy default of `10` for configuration compatibility;
+  the staged pipeline's actual retrieval pool is controlled only by
+  `candidate.matching.pipeline.retrieval-top-k`.
+- Show an animated zero-to-three-dot indicator in the Matches Panel while candidate ranking is
+  pending. Stop the animation when the backend responds or the request fails.
 
 ## 4. Non-Functional Requirements
 
@@ -87,6 +89,14 @@ The candidates list is ordered with the highest-ranked candidate first.
 - **Then** it uses the contents of that file as the LLM system prompt
 - **And** changing the prompt file does not require changing Java source
 - **And** an unreadable or empty prompt file causes a clear initialization failure
+
+### Scenario 6: Animate candidate search while ranking is pending
+
+- **Given** the recruiter starts candidate ranking for the selected job offer
+- **When** the backend request is pending
+- **Then** the Matches Panel shows the existing accessible searching status with zero to three
+  animated dots
+- **And** the dots stop when the backend responds, including empty and error responses
 
 ## Acceptance-Criteria Evidence Map
 

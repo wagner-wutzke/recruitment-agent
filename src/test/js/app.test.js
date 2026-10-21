@@ -126,6 +126,8 @@ test("searches the selected job offer and displays matching candidates safely", 
       "Candidate matching results");
   assert.equal(document.querySelector("#search-results-status").textContent,
       "Found 1 matching candidate.");
+  assert.equal(document.querySelector("#search-results-status").classList.contains("is-searching"),
+      false);
   assert.equal(document.querySelector("#search-results-list img"), null);
   assert.equal(document.querySelector("#search-results-list").textContent.includes("<img"), true);
   assert.equal(document.querySelector(".candidate-position").textContent, "#1");
@@ -326,10 +328,16 @@ test("shows a searching state while the candidate request is pending", async () 
 
   assert.equal(button.disabled, true);
   assert.equal(document.querySelector("#search-results-status").textContent,
-      "Searching the indexed resumes…");
+      "Searching the indexed resumes");
+  assert.equal(document.querySelector("#search-results-status").classList.contains("is-searching"),
+      true);
+  assert.match(styles,
+      /@keyframes\s+candidate-search-dots[\s\S]*?25%\s*\{\s*content:\s*"\.";[\s\S]*?50%\s*\{\s*content:\s*"\.\.";[\s\S]*?75%\s*\{\s*content:\s*"\.\.\.";/);
   completeSearch(response([]));
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(button.disabled, false);
+  assert.equal(document.querySelector("#search-results-status").classList.contains("is-searching"),
+      false);
   dom.window.close();
 });
 
@@ -351,6 +359,8 @@ test("communicates when the vector search returns no candidates", async () => {
       "No matching candidates were found for the current criteria. Review or loosen the job qualifications and try again.",
   );
   assert.equal(document.querySelector("#search-results-list").children.length, 0);
+  assert.equal(document.querySelector("#search-results-status").classList.contains("is-searching"),
+      false);
   dom.window.close();
 });
 
@@ -371,6 +381,8 @@ test("shows a visible search error instead of successful results when the API fa
   assert.equal(document.querySelector("#search-results-status").textContent,
       "Candidate matching could not be completed. Please try again.");
   assert.equal(document.querySelector("#search-results-list").children.length, 0);
+  assert.equal(document.querySelector("#search-results-status").classList.contains("is-searching"),
+      false);
   dom.window.close();
 });
 
@@ -384,7 +396,7 @@ test("keeps layout dimensions responsive and contains actions in their panel", a
     assert.match(styles, /\.details-panel\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*1024px/s);
     assert.match(styles, /\.offer-list\s*\{[^}]*max-height:\s*360px;[^}]*overflow-y:\s*auto/s);
     assert.match(styles,
-        /\.details-panel\s*\{[^}]*max-height:\s*calc\(100vh\s*-\s*300px\);[^}]*overflow-y:\s*auto/s);
+        /\.details-panel\s*\{[^}]*max-height:\s*calc\(100vh\s*-\s*\(100vh\s*\*\s*0\.39\)\);[^}]*overflow-y:\s*auto/s);
     assert.match(styles, /\.action-panel\s*\{[^}]*max-width:\s*1480px;[^}]*width:\s*100%/s);
     assert.match(styles,
         /\.action-panel\s*\{[^}]*align-items:\s*center;[^}]*flex-wrap:\s*nowrap;[^}]*min-height:\s*56px;[^}]*overflow-x:\s*auto/s);

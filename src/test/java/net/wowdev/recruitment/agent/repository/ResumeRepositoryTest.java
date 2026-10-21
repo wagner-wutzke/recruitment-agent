@@ -71,4 +71,21 @@ class ResumeRepositoryTest {
     assertEquals(replacementDocumentId, updated.getDocumentId());
     assertEquals(1, resumeRepository.count());
   }
+
+  @Test
+  void findsCurrentResumeUsingCaseInsensitiveCandidateEmail() {
+    String documentId = UUID.randomUUID().toString();
+    resumeRepository.save(
+        new ResumeDocument(
+            EMAIL,
+            "Candidate One",
+            "resume.pdf",
+            Instant.parse("2026-10-16T14:30:00Z"),
+            documentId));
+
+    ResumeDocument found = resumeRepository.findByCandidateEmailIgnoreCase(EMAIL.toUpperCase()).orElseThrow();
+
+    assertEquals(EMAIL, found.getCandidateEmail());
+    assertEquals(documentId, found.getDocumentId());
+  }
 }
