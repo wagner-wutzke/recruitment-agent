@@ -13,9 +13,10 @@
   `CHROMA_HOST` and `CHROMA_PORT`.
 - Use the local `all-MiniLM-L6-v2` ONNX embedding model. Model files may be downloaded and cached
   on first use; resume text itself is never sent to an external model provider.
-- Parse PDF bytes using Spring AI `PagePdfDocumentReader` and split extracted text with
-  `TokenTextSplitter` before indexing. Bind splitter settings from `resume.indexing` properties;
-  defaults preserve the current values.
+- Parse PDF bytes using Spring AI `PagePdfDocumentReader`, normalize page text with a document
+  transformer, then split with `TokenTextSplitter` before indexing. The transformer collapses
+  repeated horizontal whitespace and runs of blank lines without joining words or pages. Bind
+  splitter settings from `resume.indexing` properties; defaults preserve the current values.
 - Retain original PDF bytes in `${user.home}/data/recruitment-agent/resume/` and serve them through
   the API download route in this design.
 
@@ -44,8 +45,15 @@ Bind `resume.indexing` to a `ResumeIndexingProperties` configuration-properties 
 | `resume.indexing.chunk-size`                | `int`     | `800`   |
 | `resume.indexing.min-chunk-size-chars`      | `int`     | `350`   |
 | `resume.indexing.min-chunk-length-to-embed` | `int`     | `20`    |
-| `resume.indexing.max-num-chunks`            | `int`     | `10000` |
+| `resume.indexing.max-num-chunks`            | `int`     | `100`   |
 | `resume.indexing.keep-separator`            | `boolean` | `true`  |
+
+The defaults target resumes around 20,000 extracted characters: 800-token chunks retain enough
+context for resume sections while limiting the number of chunks contributed by longer resumes; a
+100-chunk ceiling is well above the expected chunks for such a resume and protects against
+unexpectedly large files.
+Existing Vector Store records are not rewritten by configuration changes; re-upload/reindex stored
+resumes to apply new chunk boundaries consistently.
 
 ## 3. API Contract
 
@@ -79,8 +87,8 @@ No list, delete, candidate-search, or matching endpoints are added.
 2. Parse the uploaded bytes and reject invalid PDFs or PDFs with no extractable text. Extract the
    first valid email address in document order; reject the PDF if no valid address is present.
 3. Use the extracted email as the resume's MongoDB `_id` and Chroma metadata `candidateEmail`.
-   Split extracted text into vector documents and attach the extracted email, generated UUID string,
-   and renamed disk filename as metadata.
+   Normalize whitespace on each extracted page, split the normalized text into vector documents,
+   and attach the extracted email, generated UUID string, and renamed disk filename as metadata.
 4. Retain the original bytes as `[CANDIDATE_NAME].pdf`, replacing spaces with `_`. Resolve the path
    under the configured resume directory and reject any path that escapes it.
 5. Add the chunks to Chroma using the local ONNX embedding model.
@@ -121,7 +129,8 @@ service tests.
 - Mongo mapping/repository tests verify the `resumes` collection, candidate-email `_id`, saved
   metadata, and replacement by email. Use an isolated MongoDB test database or a focused converter
   test where no Mongo service is available; never use H2/JPA for resume persistence tests.
-- Service tests verify PDF extraction, chunk metadata, local indexing, Mongo save/update calls,
+- Service tests verify PDF extraction, whitespace normalization before splitting, chunk metadata,
+  local indexing, Mongo save/update calls,
   failure compensation, and replacement cleanup.
 - Configuration binding tests verify all five `resume.indexing` values, defaults, and custom
   overrides passed to `TokenTextSplitter`.

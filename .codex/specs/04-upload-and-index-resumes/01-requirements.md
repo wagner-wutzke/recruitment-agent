@@ -40,10 +40,14 @@ JPA, and H2 are not used for resume metadata.
 - If the extracted Candidate Email already exists, replace its metadata and indexed resume content.
 - Transform extracted PDF text into vector documents, generate embeddings locally, and store the
   vector documents in the local ChromaDB service.
+- Before splitting, normalize extracted page text with a document transformer that collapses
+  repeated horizontal whitespace and excessive blank lines while preserving single word spaces,
+  section line breaks, page boundaries, and the original uploaded PDF bytes.
 - Configure the text splitter through Spring properties under `resume.indexing`:
   `chunk-size` (default `800`), `min-chunk-size-chars` (default `350`),
-  `min-chunk-length-to-embed` (default `20`), `max-num-chunks` (default `10000`), and
-  `keep-separator` (default `true`). These defaults preserve the current splitter behavior.
+  `min-chunk-length-to-embed` (default `20`), `max-num-chunks` (default `100`), and
+  `keep-separator` (default `true`). These defaults target resumes up to 20,000 extracted
+  characters while retaining relevant context in each retrieval unit.
 - Save the generated Vector Store document identifier in the corresponding MongoDB resume document.
 - Retain the original uploaded PDF under `${user.home}/data/recruitment-agent/resume/` using the
   filename rule below. Recruiters can download a retained PDF through

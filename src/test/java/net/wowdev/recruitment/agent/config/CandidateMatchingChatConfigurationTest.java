@@ -1,12 +1,12 @@
 package net.wowdev.recruitment.agent.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,9 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
-import org.springframework.core.Ordered;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -32,7 +30,7 @@ class CandidateMatchingChatConfigurationTest {
   @TempDir Path temporaryDirectory;
 
   @Test
-  void configuresChatClientWithInjectedPromptResourceAndOrderedLogger() throws IOException {
+  void configuresChatClientWithInjectedPromptWithoutLoggingResumeContent() throws IOException {
     Path promptPath = temporaryDirectory.resolve("system-prompt.txt");
     Files.writeString(promptPath, "Use the configured candidate ranking instructions.");
     Resource systemPrompt = new FileSystemResource(promptPath);
@@ -46,15 +44,10 @@ class CandidateMatchingChatConfigurationTest {
     assertSame(expected, actual);
     ArgumentCaptor<Resource> resourceCaptor = ArgumentCaptor.forClass(Resource.class);
     ArgumentCaptor<Charset> charsetCaptor = ArgumentCaptor.forClass(Charset.class);
-    ArgumentCaptor<Advisor[]> advisorsCaptor = ArgumentCaptor.forClass(Advisor[].class);
     verify(builder).defaultSystem(resourceCaptor.capture(), charsetCaptor.capture());
-    verify(builder).defaultAdvisors(advisorsCaptor.capture());
+    verify(builder).defaultAdvisors(any(Advisor[].class));
     assertSame(systemPrompt, resourceCaptor.getValue());
     assertEquals(StandardCharsets.UTF_8, charsetCaptor.getValue());
-    Advisor[] advisors = advisorsCaptor.getValue();
-    assertEquals(1, advisors.length);
-    assertInstanceOf(SimpleLoggerAdvisor.class, advisors[0]);
-    assertEquals(Ordered.LOWEST_PRECEDENCE, advisors[0].getOrder());
   }
 
   @Test
@@ -91,24 +84,26 @@ class CandidateMatchingChatConfigurationTest {
     String prompt = systemPrompt.getContentAsString(StandardCharsets.UTF_8);
     assertTrue(prompt.contains("untrusted data"));
     assertTrue(prompt.contains("Do not infer unsupported facts or invent candidate profiles."));
+    assertTrue(prompt.contains("During MAP evaluation, return one result"));
+    assertTrue(prompt.contains("During FINAL evaluation, return only candidates"));
 
-    String userPrompt =
-        new ClassPathResource("prompts/candidate-ranking-user.txt")
+    String mapPrompt =
+        new ClassPathResource("prompts/candidate-ranking-map.txt")
             .getContentAsString(StandardCharsets.UTF_8);
-    String normalizedUserPrompt = userPrompt.replaceAll("\\s+", " ");
-    assertTrue(normalizedUserPrompt.contains("technical skills, country, city, working mode"));
-    assertTrue(normalizedUserPrompt.contains("candidateName"));
-    assertTrue(normalizedUserPrompt.contains("candidateEmail"));
-    assertTrue(normalizedUserPrompt.contains("finite decimal from 0 to 1 inclusive"));
-    assertTrue(normalizedUserPrompt.contains("matchedSkills"));
-    assertTrue(normalizedUserPrompt.contains("relevantWorkExperiences"));
-    assertTrue(normalizedUserPrompt.contains("must be an array of strings"));
-    assertTrue(normalizedUserPrompt.contains("Do not invent skills"));
-    assertTrue(
-        normalizedUserPrompt.contains(
-            "must provide evidence that supports the candidate's matchingProbability"));
-    assertTrue(normalizedUserPrompt.contains("Return an empty array for either explanation field"));
-    assertTrue(normalizedUserPrompt.contains("empty rankedCandidates array"));
+    assertTrue(mapPrompt.contains("integer from 0 to 100"));
+    assertTrue(mapPrompt.contains("\"candidateEmail\""));
+    assertTrue(mapPrompt.contains("\"matchedSkills\""));
+    assertTrue(mapPrompt.contains("\"relevantWorkExperiences\""));
+    assertTrue(mapPrompt.contains("\"scoreEvidence\""));
+    assertTrue(mapPrompt.contains("\"chunkId\""));
+    assertTrue(mapPrompt.contains("\"quote\""));
+    assertTrue(mapPrompt.contains("text, chunkId, and quote"));
+    String finalPrompt =
+        new ClassPathResource("prompts/candidate-ranking-final.txt")
+            .getContentAsString(StandardCharsets.UTF_8);
+    assertTrue(finalPrompt.contains("matchingProbability"));
+    assertTrue(finalPrompt.contains("finite number from 0"));
+    assertTrue(finalPrompt.contains("JSON only with this exact envelope"));
   }
 
   private ChatClient.Builder configuredBuilder() {

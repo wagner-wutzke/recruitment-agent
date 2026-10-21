@@ -82,6 +82,7 @@ function selectOffer(offer) {
   searchResultsList.replaceChildren();
   searchResultsStatus.textContent = "";
   searchResultsStatus.classList.remove("error");
+  searchResultsStatus.classList.remove("is-searching");
   offerList.querySelectorAll("button").forEach(
       (item) => item.setAttribute("aria-current", "false"));
   const selectedButton = [...offerList.querySelectorAll("button")].find(
@@ -255,8 +256,9 @@ async function findCandidates() {
   offerDetails.classList.add("d-none");
   searchResultsPanel.classList.remove("d-none");
   searchResultsList.replaceChildren();
-  searchResultsStatus.textContent = "Searching the indexed resumes…";
+  searchResultsStatus.textContent = "Searching the indexed resumes";
   searchResultsStatus.classList.remove("error");
+  searchResultsStatus.classList.add("is-searching");
 
   try {
     const response = await fetch("/api/candidate-matches", {
@@ -283,6 +285,7 @@ async function findCandidates() {
     searchResultsStatus.textContent = "Candidate matching could not be completed. Please try again.";
     searchResultsStatus.classList.add("error");
   } finally {
+    searchResultsStatus.classList.remove("is-searching");
     if (selectedOfferId === searchedOfferId) {
       findCandidatesButton.disabled = false;
     }

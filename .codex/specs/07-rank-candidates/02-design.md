@@ -44,8 +44,8 @@ Use the existing `candidate.matching` configuration properties:
 | Property                                  | Current default                                  | Purpose                                                                  |
 |-------------------------------------------|--------------------------------------------------|--------------------------------------------------------------------------|
 | `candidate.matching.model`                | `gpt-6-luna`                                     | Spring AI chat model used to evaluate and rank retrieved candidates      |
-| `candidate.matching.similarity-threshold` | `0.6`                                            | Inclusive Vector Store retrieval threshold; valid range is `[0,1]`       |
-| `candidate.matching.top-k`                | `3`                                              | Maximum number of resume documents retrieved per query; positive integer |
+| `candidate.matching.similarity-threshold` | `0.5`                                            | Inclusive Vector Store retrieval threshold; valid range is `[0,1]`       |
+| `candidate.matching.top-k`                | `10`                                             | Legacy setting; staged pipeline uses `candidate.matching.pipeline.retrieval-top-k` |
 | `candidate.matching.system-prompt-file`   | `classpath:prompts/candidate-ranking-system.txt` | Resource containing the LLM system prompt                                |
 
 All values remain overridable through application properties or their corresponding
@@ -128,6 +128,9 @@ grounded in the retrieved resume evidence.
 - Keep **Find Candidates** disabled or unavailable until a job offer is selected.
 - On activation, disable the button while the request is pending and show an in-panel searching
   state.
+- Animate a decorative sequence of zero to three dots beside the searching status while the
+  request is pending. Keep the accessible status text stable, and remove the animation state on
+  success, empty result, error, or offer change. Honor the existing reduced-motion stylesheet.
 - Show the Matches Panel on the right side instead of offer Details while search states/results are
   shown.
 - Render candidates in API ranking order, including ranking position, LLM-returned name and email,

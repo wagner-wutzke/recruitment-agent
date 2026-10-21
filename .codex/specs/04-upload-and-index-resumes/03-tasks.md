@@ -56,6 +56,24 @@
 - [ ] **Task 7.2:** Run the relevant Java and browser suites, verify upload/replacement and failure
   behavior against the updated criteria, and record verification/reviewer findings (**AC1–8**).
 
+## Phase 8: Tune Indexing Defaults for Standard Resume Length
+
+- [x] **Task 8.1:** Align text-splitting defaults across application properties, configuration
+  properties, and tests for resumes around 20,000 extracted characters; verify documented defaults
+  and existing indexing behavior. Evidence: defaults are 800-token chunks, minimum 350 chars,
+  minimum embed length 20, maximum 100 chunks, and separator preservation; property tests and the
+  full Java suite (126 tests) pass.
+
+## Phase 9: Normalize Extracted PDF Text
+
+- [x] **Task 9.1:** Add a document transformer between PDF extraction and token splitting to collapse
+  repeated horizontal whitespace and excessive blank lines while preserving word separation,
+  section breaks, metadata, and page boundaries. Evidence: `ResumePdfIndexerTest` passes, including
+  a normalization-before-indexing case.
+- [x] **Task 9.2:** Run the focused indexer tests and full Java suite; record verification evidence.
+  Evidence: focused indexer tests pass; clean JaCoCo verify passes all 129 tests across 27 suites,
+  `ResumeWhitespaceNormalizer` has 100% line coverage, and `git diff --check` passes.
+
 ## Review Report
 
 - **Spec compliance:** Resume metadata is stored only in MongoDB, keyed by candidate email. The
