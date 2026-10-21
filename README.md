@@ -4,15 +4,14 @@ When you run `./sdd-multi.sh init authentication` and `./sdd-multi.sh init payme
 repository clean structure scales dynamically like this:
 
 ```textmate
-├── AGENTS.md                  # Global orchestrator file
-├── sdd-multi.sh               # The multi-directory script
+├── AGENTS.md                    # Global orchestrator file
+├── sdd-multi.sh                 # The multi-directory script
 ├── specs/
-├──── authentication/          # Feature Suite A
+├──── 01-recruiter-application/  # Feature ssuite 01
 │     ├── 01-requirements.md
 │     ├── 02-design.md
-│     ├── 03-tasks.md
-│     └── prompts.md
-├──── payment-billing/          # Feature Suite B
+│     └── 03-tasks.md
+├──── 02-manage-job-position     # Feature suite 02
 │     ├── 01-requirements.md
 │     ├── 02-design.md
 │     └── 03-tasks.md
