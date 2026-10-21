@@ -14,7 +14,11 @@ matched skill and relevant experience, return an object with text, chunkId, and 
 must copy exact words and punctuation, in the same order, from that candidate's named chunk.
 Whitespace may be normalized (for example, a PDF line wrap may be returned as a single space), but
 do not paraphrase, omit words, or add words. Omit a claim if no source quote can be provided.
-Include one or more scoreEvidence objects containing exact words and punctuation from that
-candidate's chunks that support the assessment; whitespace normalization is allowed there too.
+Include one or more scoreEvidence objects for every candidate. Each object must cite the chunkId
+of a supplied chunk and a concise, contiguous excerpt from that exact chunk that supports the
+assigned score. Copy exact words and punctuation; whitespace normalization is allowed only to
+account for PDF line wrapping. Do not quote from another candidate, combine separate excerpts,
+paraphrase, or use a whole chunk when a shorter relevant excerpt supports the score. A score must
+not be returned without valid scoreEvidence.
 Do not add prose or Markdown outside the JSON.
 Never infer candidate identity, skills, qualifications, or experience.

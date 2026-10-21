@@ -189,6 +189,27 @@ class CandidateMapEvaluatorTest {
   }
 
   @Test
+  void acceptsConciseScoreEvidenceQuotedFromTheSupportingChunk() {
+    CandidateMapEvaluator evaluator =
+        new CandidateMapEvaluator(mock(ChatClient.class), new CandidateMatchingPipelineProperties());
+    CandidateResumeEvidence candidate =
+        new CandidateResumeEvidence(
+            "one@example.com", "Candidate 0", "resume-0",
+            List.of(
+                new ResumeEvidenceChunk(
+                    "chunk-one", "Built Java microservices for a cloud payments platform.")));
+    CandidateMapResult result =
+        new CandidateMapResult(
+            "one@example.com", 87, List.of(), List.of(),
+            List.of(new EvidenceCitation("chunk-one", "Built Java microservices")));
+
+    List<CandidateMapResult> sanitized =
+        evaluator.validateAndSanitizeResponse(new CandidateMapResponse(List.of(result)), List.of(candidate));
+
+    assertEquals(result.scoreEvidence(), sanitized.getFirst().scoreEvidence());
+  }
+
+  @Test
   void dropsUnsupportedOptionalClaimsButKeepsValidCandidateScoreAndEvidence() {
     CandidateMapEvaluator evaluator =
         new CandidateMapEvaluator(mock(ChatClient.class), new CandidateMatchingPipelineProperties());

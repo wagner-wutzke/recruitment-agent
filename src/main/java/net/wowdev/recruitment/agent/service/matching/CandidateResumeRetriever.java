@@ -37,12 +37,12 @@ public class CandidateResumeRetriever {
             .similarityThreshold(matchingProperties.getSimilarityThreshold())
             .build();
     List<Document> results = vectorStore.similaritySearch(request);
-    return List.copyOf(results);
+    return results == null ? List.of() : List.copyOf(results);
   }
 
   String retrievalQuestion(JobOffer offer) {
     Map<String, Object> criteria = new LinkedHashMap<>();
-    //criteria.put("position", offer.jobName());
+    criteria.put("position", offer.jobName());
     criteria.put("description", offer.jobDescription());
     criteria.put("requiredQualifications", offer.requiredQualifications());
     criteria.put("responsibilities", offer.responsibilities());
