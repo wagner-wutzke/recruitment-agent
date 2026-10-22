@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,7 +20,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
-import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -44,13 +44,10 @@ class CandidateMatchingChatConfigurationTest {
     assertSame(expected, actual);
     ArgumentCaptor<Resource> resourceCaptor = ArgumentCaptor.forClass(Resource.class);
     ArgumentCaptor<Charset> charsetCaptor = ArgumentCaptor.forClass(Charset.class);
-    ArgumentCaptor<Advisor[]> advisorsCaptor = ArgumentCaptor.forClass(Advisor[].class);
     verify(builder).defaultSystem(resourceCaptor.capture(), charsetCaptor.capture());
-    verify(builder).defaultAdvisors(advisorsCaptor.capture());
+    verify(builder, never()).defaultAdvisors(any(Advisor[].class));
     assertSame(systemPrompt, resourceCaptor.getValue());
     assertEquals(StandardCharsets.UTF_8, charsetCaptor.getValue());
-    assertEquals(1, advisorsCaptor.getValue().length);
-    assertTrue(advisorsCaptor.getValue()[0] instanceof SimpleLoggerAdvisor);
   }
 
   @Test
@@ -107,6 +104,21 @@ class CandidateMatchingChatConfigurationTest {
     assertTrue(finalPrompt.contains("matchingProbability"));
     assertTrue(finalPrompt.contains("finite number from 0"));
     assertTrue(finalPrompt.contains("JSON only with this exact envelope"));
+  }
+
+  @Test
+  void buildsResumeMetadataClientWithoutRankingDefaults() {
+    ChatClient.Builder builder = configuredBuilder();
+    when(builder.clone()).thenReturn(builder);
+    ChatClient expected = mock(ChatClient.class);
+    when(builder.build()).thenReturn(expected);
+
+    assertSame(expected, configuration(new ClassPathResource("prompts/candidate-ranking-system.txt"))
+        .resumeMetadataChatClient(builder));
+
+    verify(builder).clone();
+    verify(builder, never()).defaultSystem(any(Resource.class), any(Charset.class));
+    verify(builder, never()).defaultAdvisors(any(Advisor[].class));
   }
 
   private ChatClient.Builder configuredBuilder() {

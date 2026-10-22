@@ -1,6 +1,7 @@
 package net.wowdev.recruitment.agent.service.resume;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,6 +12,7 @@ import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
+import net.wowdev.recruitment.agent.service.resume.model.ResumeMetadata;
 
 @Service
 public class ResumePdfIndexer {
@@ -21,9 +23,14 @@ public class ResumePdfIndexer {
   private final VectorStore vectorStore;
   private final DocumentTransformer whitespaceNormalizer;
   private final TokenTextSplitter textSplitter;
+  private final ResumeMetadataExtractor metadataExtractor;
 
-  public ResumePdfIndexer(VectorStore vectorStore, ResumeIndexingProperties properties) {
+  public ResumePdfIndexer(
+      VectorStore vectorStore,
+      ResumeIndexingProperties properties,
+      ResumeMetadataExtractor metadataExtractor) {
     this.vectorStore = vectorStore;
+    this.metadataExtractor = metadataExtractor;
     this.whitespaceNormalizer = new ResumeWhitespaceNormalizer();
     this.textSplitter =
         TokenTextSplitter.builder()
@@ -50,12 +57,21 @@ public class ResumePdfIndexer {
 
     String candidateEmail = extractCandidateEmail(pages);
     List<Document> normalizedPages = whitespaceNormalizer.transform(pages);
+    String normalizedText =
+        normalizedPages.stream()
+            .map(Document::getText)
+            .filter(text -> text != null && !text.isBlank())
+            .reduce((left, right) -> left + "\n" + right)
+            .orElse("");
+    ResumeMetadata metadata =
+        Optional.ofNullable(metadataExtractor.extract(normalizedText)).orElse(ResumeMetadata.empty());
     List<Document> chunks = textSplitter.apply(normalizedPages);
     chunks.forEach(
         chunk -> {
           chunk.getMetadata().put("candidateEmail", candidateEmail);
           chunk.getMetadata().put("documentId", documentId.toString());
           chunk.getMetadata().put("fileName", fileName);
+          chunk.getMetadata().putAll(metadata.toVectorStoreMetadata());
         });
     if (chunks.isEmpty()) {
       throw new InvalidResumePdfException("PDF contains no extractable text");

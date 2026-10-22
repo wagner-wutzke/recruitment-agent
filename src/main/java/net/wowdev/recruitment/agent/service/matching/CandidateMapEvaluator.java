@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.service.matching.model.CandidateMapResponse;
 import net.wowdev.recruitment.agent.service.matching.model.CandidateMapResult;
@@ -51,13 +52,14 @@ public class CandidateMapEvaluator {
     }
     List<List<CandidateResumeEvidence>> batches = partition(candidates);
     List<CompletableFuture<List<CandidateMapResult>>> futures;
-    try (ExecutorService executor =
-        Executors.newFixedThreadPool(pipelineProperties.getMaxConcurrency())) {
+    Semaphore concurrencyLimit = new Semaphore(pipelineProperties.getMaxConcurrency());
+    try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
       futures =
           batches.stream()
               .map(
                   batch ->
-                      CompletableFuture.supplyAsync(() -> evaluateBatch(offer, batch), executor))
+                      CompletableFuture.supplyAsync(
+                          () -> evaluateBatchWithinLimit(offer, batch, concurrencyLimit), executor))
               .toList();
       try {
         List<CandidateMapResult> results = new ArrayList<>();
@@ -72,6 +74,23 @@ public class CandidateMapEvaluator {
           throw runtimeException;
         }
         throw new IllegalStateException("Candidate map evaluation failed.", cause);
+      }
+    }
+  }
+
+  private List<CandidateMapResult> evaluateBatchWithinLimit(
+      JobOffer offer, List<CandidateResumeEvidence> batch, Semaphore concurrencyLimit) {
+    boolean acquired = false;
+    try {
+      concurrencyLimit.acquire();
+      acquired = true;
+      return evaluateBatch(offer, batch);
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Candidate map evaluation was interrupted.", exception);
+    } finally {
+      if (acquired) {
+        concurrencyLimit.release();
       }
     }
   }

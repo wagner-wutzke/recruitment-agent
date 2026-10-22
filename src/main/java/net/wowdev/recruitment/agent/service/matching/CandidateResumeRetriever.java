@@ -2,8 +2,10 @@ package net.wowdev.recruitment.agent.service.matching;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -48,14 +50,25 @@ public class CandidateResumeRetriever {
 
   public List<Document> retrieve(JobOffer offer) {
     String query = retrievalQuestion(offer);
-    log.info("Start retrieving resume documents.");
-    SearchRequest request =
-        SearchRequest.builder()
-            .query(query)
-            .topK(pipelineProperties.getRetrievalTopK())
-            .similarityThreshold(matchingProperties.getSimilarityThreshold())
-            .build();
-    List<Document> seedResults = vectorStore.similaritySearch(request);
+    int retrievalLimit = pipelineProperties.getRetrievalTopK();
+    Filter.Expression metadataFilter = offerMetadataFilter(offer);
+    List<Document> seedResults;
+    if (metadataFilter == null) {
+      seedResults = mergeSearchResults(search(query, retrievalLimit, null), null, retrievalLimit);
+    } else {
+      List<Document> constrainedResults;
+      try {
+        constrainedResults = search(query, retrievalLimit, metadataFilter);
+      } catch (RuntimeException exception) {
+        log.warn("Metadata-constrained resume search failed; retrying without metadata filters.");
+        constrainedResults = List.of();
+      }
+      seedResults = mergeSearchResults(constrainedResults, null, retrievalLimit);
+      if (seedResults.size() < retrievalLimit) {
+        seedResults =
+            mergeSearchResults(seedResults, search(query, retrievalLimit, null), retrievalLimit);
+      }
+    }
     if (seedResults == null || seedResults.isEmpty()) {
       return List.of();
     }
@@ -70,7 +83,8 @@ public class CandidateResumeRetriever {
               .similarityThresholdAll()
               .filterExpression(candidateVersionFilter(candidate))
               .build();
-      List<Document> candidateChunks = vectorStore.similaritySearch(completeCandidateEvidenceRequest);
+      List<Document> candidateChunks =
+          vectorStore.similaritySearch(completeCandidateEvidenceRequest);
       if (candidateChunks != null) {
         candidateChunks.stream()
             .filter(document -> belongsToCandidateVersion(document, candidate))
@@ -78,6 +92,75 @@ public class CandidateResumeRetriever {
       }
     }
     return List.copyOf(evidenceById.values());
+  }
+
+  private List<Document> search(String query, int topK, Filter.Expression filter) {
+    SearchRequest.Builder request =
+        SearchRequest.builder()
+            .query(query)
+            .topK(topK)
+            .similarityThreshold(matchingProperties.getSimilarityThreshold());
+    if (filter != null) {
+      request.filterExpression(filter);
+    }
+    return vectorStore.similaritySearch(request.build());
+  }
+
+  private Filter.Expression offerMetadataFilter(JobOffer offer) {
+    List<Filter.Expression> criteria = new ArrayList<>();
+    addStringCriterion(criteria, "positionFilterValue", offer.jobName());
+    addStringCriterion(criteria, "allocationFilterValue", offer.allocation());
+    if (criteria.isEmpty()) {
+      return null;
+    }
+    if (criteria.size() == 1) {
+      return criteria.getFirst();
+    }
+    return new Filter.Expression(Filter.ExpressionType.AND, criteria.get(0), criteria.get(1));
+  }
+
+  private void addStringCriterion(
+      List<Filter.Expression> criteria, String metadataKey, String offerValue) {
+    if (offerValue == null || offerValue.isBlank()) {
+      return;
+    }
+    criteria.add(
+        new Filter.Expression(
+            Filter.ExpressionType.EQ,
+            new Filter.Key(metadataKey),
+            new Filter.Value(normalizeFilterValue(offerValue))));
+  }
+
+  private String normalizeFilterValue(String value) {
+    return value.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+  }
+
+  private List<Document> mergeSearchResults(
+      List<Document> preferred, List<Document> fallback, int limit) {
+    List<Document> merged = new ArrayList<>(limit);
+    Set<String> seenIds = new HashSet<>();
+    appendUnique(merged, seenIds, preferred, limit);
+    appendUnique(merged, seenIds, fallback, limit);
+    return List.copyOf(merged);
+  }
+
+  private void appendUnique(
+      List<Document> destination, Set<String> seenIds, List<Document> source, int limit) {
+    if (source == null) {
+      return;
+    }
+    for (Document document : source) {
+      if (destination.size() >= limit) {
+        return;
+      }
+      if (document == null) {
+        continue;
+      }
+      String id = document.getId();
+      if (id == null || id.isBlank() || seenIds.add(id)) {
+        destination.add(document);
+      }
+    }
   }
 
   private List<CandidateVersion> selectCurrentCandidates(List<Document> documents) {
@@ -107,8 +190,7 @@ public class CandidateResumeRetriever {
       return List.of();
     }
 
-    Iterable<ResumeDocument> storedResumes =
-        resumeRepository.findAllById(emailLookupValues);
+    Iterable<ResumeDocument> storedResumes = resumeRepository.findAllById(emailLookupValues);
     Map<String, ResumeDocument> currentResumeByEmail = new HashMap<>();
     for (ResumeDocument resume : storedResumes) {
       if (resume != null && resume.getCandidateEmail() != null) {
@@ -125,8 +207,7 @@ public class CandidateResumeRetriever {
             })
         .sorted(
             Comparator.comparing(
-                    CandidateVersion::bestScore,
-                    Comparator.nullsLast(Comparator.reverseOrder()))
+                    CandidateVersion::bestScore, Comparator.nullsLast(Comparator.reverseOrder()))
                 .thenComparingInt(
                     candidate -> candidate.bestScore() == null ? candidate.bestRank() : 0)
                 .thenComparing(candidate -> normalizeEmail(candidate.candidateEmail()))
