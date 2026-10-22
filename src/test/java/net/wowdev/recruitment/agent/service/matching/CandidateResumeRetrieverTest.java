@@ -1,6 +1,7 @@
 package net.wowdev.recruitment.agent.service.matching;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -41,6 +42,7 @@ class CandidateResumeRetrieverTest {
     when(resumeRepository.findAllById(any())).thenReturn(List.of(resume("ada@example.com", "resume-v1")));
     when(vectorStore.similaritySearch(any(SearchRequest.class)))
         .thenReturn(List.of(document))
+        .thenReturn(List.of(document))
         .thenReturn(List.of(document, completeEvidence));
     ResumeIndexingProperties resumeProperties = new ResumeIndexingProperties();
     resumeProperties.setMaxNumChunks(73);
@@ -64,10 +66,16 @@ class CandidateResumeRetrieverTest {
     assertEquals(List.of(document, completeEvidence), retriever.retrieve(offer));
 
     ArgumentCaptor<SearchRequest> request = ArgumentCaptor.forClass(SearchRequest.class);
-    verify(vectorStore, org.mockito.Mockito.times(2)).similaritySearch(request.capture());
+    verify(vectorStore, org.mockito.Mockito.times(3)).similaritySearch(request.capture());
     List<SearchRequest> requests = request.getAllValues();
     assertEquals(37, requests.getFirst().getTopK());
     assertEquals(0.82, requests.getFirst().getSimilarityThreshold());
+    assertTrue(requests.getFirst().hasFilterExpression());
+    assertTrue(requests.getFirst().getFilterExpression().toString().contains("positionFilterValue"));
+    assertTrue(requests.getFirst().getFilterExpression().toString().contains("allocationFilterValue"));
+    assertTrue(requests.getFirst().getFilterExpression().toString().contains("platform engineer"));
+    assertTrue(requests.getFirst().getFilterExpression().toString().contains("remote"));
+    assertFalse(requests.getFirst().getFilterExpression().toString().contains("country"));
     assertTrue(requests.getFirst().getQuery().contains("Platform engineer"));
     assertTrue(requests.getFirst().getQuery().contains("Build cloud services"));
     assertTrue(requests.getFirst().getQuery().contains("Java and Kubernetes"));
@@ -75,7 +83,8 @@ class CandidateResumeRetrieverTest {
     assertTrue(requests.getFirst().getQuery().contains("Event streaming"));
     assertTrue(requests.getFirst().getQuery().contains("Brazil"));
     assertTrue(requests.getFirst().getQuery().contains("Remote"));
-    SearchRequest candidateRequest = requests.get(1);
+    assertFalse(requests.get(1).hasFilterExpression());
+    SearchRequest candidateRequest = requests.get(2);
     assertEquals(73, candidateRequest.getTopK());
     assertEquals(0.0, candidateRequest.getSimilarityThreshold());
     assertTrue(candidateRequest.hasFilterExpression());
@@ -121,6 +130,7 @@ class CandidateResumeRetrieverTest {
     Document unrelatedHydrationResult = seed("unrelated", "cy@example.com", "cy-v2");
     when(vectorStore.similaritySearch(any(SearchRequest.class)))
         .thenReturn(List.of(adaStrong, adaWeak, beaHit, cyStaleHit))
+        .thenReturn(List.of())
         .thenReturn(List.of(adaHydrated, unrelatedHydrationResult))
         .thenReturn(List.of(beaHydrated));
 
@@ -135,9 +145,10 @@ class CandidateResumeRetrieverTest {
     assertEquals(List.of(adaHydrated, beaHydrated), retriever.retrieve(offer()));
 
     ArgumentCaptor<SearchRequest> requests = ArgumentCaptor.forClass(SearchRequest.class);
-    verify(vectorStore, org.mockito.Mockito.times(3)).similaritySearch(requests.capture());
-    assertTrue(requests.getAllValues().get(1).getFilterExpression().toString().contains("Ada@Example.com"));
-    assertTrue(requests.getAllValues().get(2).getFilterExpression().toString().contains("bea@example.com"));
+    verify(vectorStore, org.mockito.Mockito.times(4)).similaritySearch(requests.capture());
+    assertFalse(requests.getAllValues().get(1).hasFilterExpression());
+    assertTrue(requests.getAllValues().get(2).getFilterExpression().toString().contains("Ada@Example.com"));
+    assertTrue(requests.getAllValues().get(3).getFilterExpression().toString().contains("bea@example.com"));
   }
 
   @Test
@@ -155,6 +166,7 @@ class CandidateResumeRetrieverTest {
     Document alphaHydrated = seed("alpha-hydrated", "alpha@example.com", "alpha-v1");
     when(vectorStore.similaritySearch(any(SearchRequest.class)))
         .thenReturn(List.of(zeta, alpha))
+        .thenReturn(List.of())
         .thenReturn(List.of(alphaHydrated));
     CandidateResumeRetriever retriever =
         new CandidateResumeRetriever(
@@ -182,6 +194,7 @@ class CandidateResumeRetrieverTest {
     Document zetaHydrated = seed("zeta-hydrated", "zeta@example.com", "zeta-v1");
     when(vectorStore.similaritySearch(any(SearchRequest.class)))
         .thenReturn(List.of(zeta, alpha))
+        .thenReturn(List.of())
         .thenReturn(List.of(zetaHydrated));
     CandidateResumeRetriever retriever =
         new CandidateResumeRetriever(
@@ -215,5 +228,167 @@ class CandidateResumeRetrieverTest {
     return new JobOffer(
         "offer-1", "Engineer", "Description", "Qualifications", "Brazil", "Remote",
         "Responsibilities", null, null, "Nice to have", null);
+  }
+
+  @Test
+  void usesOnlyUnconstrainedSearchWhenOfferHasNoFilterableValues() {
+    VectorStore vectorStore = mock(VectorStore.class);
+    Document seed = seed("seed", "ada@example.com", "resume-v1", 0.9);
+    Document hydrated = seed("hydrated", "ada@example.com", "resume-v1");
+    when(vectorStore.similaritySearch(any(SearchRequest.class)))
+        .thenReturn(List.of(seed))
+        .thenReturn(List.of(hydrated));
+    ResumeRepository resumeRepository = mock(ResumeRepository.class);
+    when(resumeRepository.findAllById(any()))
+        .thenReturn(List.of(resume("ada@example.com", "resume-v1")));
+    CandidateResumeRetriever retriever =
+        retriever(vectorStore, new CandidateMatchingPipelineProperties(), resumeRepository);
+    JobOffer offer = new JobOffer("offer", "  ", "Description", null, "Toronto", null);
+
+    assertEquals(List.of(hydrated), retriever.retrieve(offer));
+
+    ArgumentCaptor<SearchRequest> requests = ArgumentCaptor.forClass(SearchRequest.class);
+    verify(vectorStore, org.mockito.Mockito.times(2)).similaritySearch(requests.capture());
+    assertFalse(requests.getAllValues().getFirst().hasFilterExpression());
+  }
+
+  @Test
+  void supplementsConstrainedResultsDeduplicatesAndCapsTheCombinedSeedSet() {
+    VectorStore vectorStore = mock(VectorStore.class);
+    CandidateMatchingPipelineProperties pipelineProperties =
+        new CandidateMatchingPipelineProperties();
+    pipelineProperties.setRetrievalTopK(2);
+    pipelineProperties.setMaxCandidates(5);
+    Document first = seed("first-seed", "first@example.com", "first-v1", 0.95);
+    Document second = seed("second-seed", "second@example.com", "second-v1", 0.9);
+    Document third = seed("third-seed", "third@example.com", "third-v1", 0.85);
+    Document firstHydrated = seed("first-hydrated", "first@example.com", "first-v1");
+    Document secondHydrated = seed("second-hydrated", "second@example.com", "second-v1");
+    when(vectorStore.similaritySearch(any(SearchRequest.class)))
+        .thenReturn(List.of(first))
+        .thenReturn(List.of(first, second, third))
+        .thenReturn(List.of(firstHydrated))
+        .thenReturn(List.of(secondHydrated));
+    ResumeRepository resumeRepository = mock(ResumeRepository.class);
+    when(resumeRepository.findAllById(any()))
+        .thenReturn(
+            List.of(
+                resume("first@example.com", "first-v1"),
+                resume("second@example.com", "second-v1"),
+                resume("third@example.com", "third-v1")));
+    CandidateResumeRetriever retriever =
+        retriever(vectorStore, pipelineProperties, resumeRepository);
+    JobOffer offer = new JobOffer("offer", "  eNgInEeR  ", null, null, "Toronto", " REMOTE ");
+
+    assertEquals(List.of(firstHydrated, secondHydrated), retriever.retrieve(offer));
+
+    ArgumentCaptor<SearchRequest> requests = ArgumentCaptor.forClass(SearchRequest.class);
+    verify(vectorStore, org.mockito.Mockito.times(4)).similaritySearch(requests.capture());
+    String filter = requests.getAllValues().getFirst().getFilterExpression().toString();
+    assertTrue(filter.contains("positionFilterValue"));
+    assertTrue(filter.contains("engineer"));
+    assertTrue(filter.contains("allocationFilterValue"));
+    assertTrue(filter.contains("remote"));
+    assertEquals(2, requests.getAllValues().getFirst().getTopK());
+    assertFalse(requests.getAllValues().get(1).hasFilterExpression());
+  }
+
+  @Test
+  void retriesUnconstrainedSearchWhenMetadataFilterSearchThrows() {
+    VectorStore vectorStore = mock(VectorStore.class);
+    Document seed = seed("seed", "ada@example.com", "resume-v1", 0.9);
+    Document hydrated = seed("hydrated", "ada@example.com", "resume-v1");
+    when(vectorStore.similaritySearch(any(SearchRequest.class)))
+        .thenThrow(new IllegalArgumentException("filter unsupported"))
+        .thenReturn(List.of(seed))
+        .thenReturn(List.of(hydrated));
+    ResumeRepository resumeRepository = mock(ResumeRepository.class);
+    when(resumeRepository.findAllById(any()))
+        .thenReturn(List.of(resume("ada@example.com", "resume-v1")));
+    CandidateResumeRetriever retriever =
+        retriever(vectorStore, new CandidateMatchingPipelineProperties(), resumeRepository);
+
+    assertEquals(List.of(hydrated), retriever.retrieve(offer()));
+
+    ArgumentCaptor<SearchRequest> requests = ArgumentCaptor.forClass(SearchRequest.class);
+    verify(vectorStore, org.mockito.Mockito.times(3)).similaritySearch(requests.capture());
+    assertTrue(requests.getAllValues().getFirst().hasFilterExpression());
+    assertFalse(requests.getAllValues().get(1).hasFilterExpression());
+  }
+
+  @Test
+  void doesNotFallbackWhenConstrainedSearchFillsTheRetrievalLimit() {
+    VectorStore vectorStore = mock(VectorStore.class);
+    CandidateMatchingPipelineProperties pipelineProperties = new CandidateMatchingPipelineProperties();
+    pipelineProperties.setRetrievalTopK(1);
+    Document seed = seed("seed", "ada@example.com", "resume-v1", 0.9);
+    Document hydrated = seed("hydrated", "ada@example.com", "resume-v1");
+    when(vectorStore.similaritySearch(any(SearchRequest.class)))
+        .thenReturn(List.of(seed))
+        .thenReturn(List.of(hydrated));
+    ResumeRepository resumeRepository = mock(ResumeRepository.class);
+    when(resumeRepository.findAllById(any()))
+        .thenReturn(List.of(resume("ada@example.com", "resume-v1")));
+    CandidateResumeRetriever retriever =
+        retriever(vectorStore, pipelineProperties, resumeRepository);
+
+    assertEquals(List.of(hydrated), retriever.retrieve(offer()));
+
+    ArgumentCaptor<SearchRequest> requests = ArgumentCaptor.forClass(SearchRequest.class);
+    verify(vectorStore, org.mockito.Mockito.times(2)).similaritySearch(requests.capture());
+    assertTrue(requests.getAllValues().getFirst().hasFilterExpression());
+    assertTrue(requests.getAllValues().get(1).getFilterExpression().toString().contains("candidateEmail"));
+  }
+
+  @Test
+  void filtersByOnlyPositionWhenAllocationIsMissing() {
+    VectorStore vectorStore = mock(VectorStore.class);
+    Document seed = seed("seed", "ada@example.com", "resume-v1", 0.9);
+    Document hydrated = seed("hydrated", "ada@example.com", "resume-v1");
+    when(vectorStore.similaritySearch(any(SearchRequest.class)))
+        .thenReturn(List.of(seed))
+        .thenReturn(List.of())
+        .thenReturn(List.of(hydrated));
+    ResumeRepository resumeRepository = mock(ResumeRepository.class);
+    when(resumeRepository.findAllById(any()))
+        .thenReturn(List.of(resume("ada@example.com", "resume-v1")));
+    CandidateResumeRetriever retriever =
+        retriever(vectorStore, new CandidateMatchingPipelineProperties(), resumeRepository);
+    JobOffer offer = new JobOffer("offer", "Engineer", null, null, "Toronto", "  ");
+
+    assertEquals(List.of(hydrated), retriever.retrieve(offer));
+
+    ArgumentCaptor<SearchRequest> requests = ArgumentCaptor.forClass(SearchRequest.class);
+    verify(vectorStore, org.mockito.Mockito.times(3)).similaritySearch(requests.capture());
+    String filter = requests.getAllValues().getFirst().getFilterExpression().toString();
+    assertTrue(filter.contains("positionFilterValue"));
+    assertFalse(filter.contains("allocationFilterValue"));
+  }
+
+  @Test
+  void propagatesFailureWhenConstrainedAndFallbackSearchBothFail() {
+    VectorStore vectorStore = mock(VectorStore.class);
+    when(vectorStore.similaritySearch(any(SearchRequest.class)))
+        .thenThrow(new IllegalStateException("search unavailable"));
+    CandidateResumeRetriever retriever =
+        retriever(
+            vectorStore, new CandidateMatchingPipelineProperties(), mock(ResumeRepository.class));
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        IllegalStateException.class, () -> retriever.retrieve(offer()));
+
+    verify(vectorStore, org.mockito.Mockito.times(2)).similaritySearch(any(SearchRequest.class));
+  }
+
+  private static CandidateResumeRetriever retriever(
+      VectorStore vectorStore,
+      CandidateMatchingPipelineProperties pipelineProperties,
+      ResumeRepository resumeRepository) {
+    return new CandidateResumeRetriever(
+        vectorStore,
+        new CandidateMatchingProperties(),
+        pipelineProperties,
+        new ResumeIndexingProperties(),
+        resumeRepository);
   }
 }

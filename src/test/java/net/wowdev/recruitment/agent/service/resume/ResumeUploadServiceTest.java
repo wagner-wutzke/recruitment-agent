@@ -23,6 +23,7 @@ import java.util.UUID;
 import net.wowdev.recruitment.agent.entity.ResumeDocument;
 import net.wowdev.recruitment.agent.repository.ResumeRepository;
 import net.wowdev.recruitment.agent.service.resume.model.ResumeDownload;
+import net.wowdev.recruitment.agent.service.resume.model.ResumeMetadata;
 import net.wowdev.recruitment.agent.service.resume.model.ResumeUploadResult;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -75,7 +76,8 @@ class ResumeUploadServiceTest {
   }
 
   private static ResumePdfIndexer indexer(VectorStore vectorStore) {
-    return new ResumePdfIndexer(vectorStore, new ResumeIndexingProperties());
+    return new ResumePdfIndexer(
+        vectorStore, new ResumeIndexingProperties(), mock(ResumeMetadataExtractor.class));
   }
 
   @Test
@@ -133,6 +135,43 @@ class ResumeUploadServiceTest {
     assertEquals("documentId", ((Filter.Key) filterCaptor.getValue().left()).key());
     assertEquals(
         previous.getDocumentId(), ((Filter.Value) filterCaptor.getValue().right()).value());
+  }
+
+  @Test
+  void indexesNewlyExtractedMetadataWhenReplacingResume() throws IOException {
+    ResumeRepository repository = mock(ResumeRepository.class);
+    VectorStore vectorStore = mock(VectorStore.class);
+    ResumeFileStorage fileStorage = new ResumeFileStorage(tempDirectory.resolve("resumes"));
+    ResumeMetadataExtractor metadataExtractor = mock(ResumeMetadataExtractor.class);
+    when(metadataExtractor.extract(org.mockito.ArgumentMatchers.anyString()))
+        .thenReturn(
+            new ResumeMetadata("Resume Alias", "United Kingdom", "Engineer", java.util.List.of("Java"), null, null, null, null));
+    when(repository.findById(EMAIL))
+        .thenReturn(
+            Optional.of(
+                new ResumeDocument(
+                    EMAIL,
+                    CANDIDATE_NAME,
+                    "Ada_Lovelace.pdf",
+                    Instant.parse("2026-10-15T10:00:00Z"),
+                    UUID.randomUUID())));
+    when(repository.save(org.mockito.ArgumentMatchers.any(ResumeDocument.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    ResumePdfIndexer indexer =
+        new ResumePdfIndexer(vectorStore, new ResumeIndexingProperties(), metadataExtractor);
+
+    ResumeDocument saved =
+        new ResumeUploadService(repository, fileStorage, indexer, vectorStore)
+            .upload(CANDIDATE_NAME, pdfWithText("Updated Engineer resume"))
+            .resume();
+
+    org.mockito.ArgumentCaptor<java.util.List<org.springframework.ai.document.Document>> chunks =
+        org.mockito.ArgumentCaptor.forClass(java.util.List.class);
+    verify(vectorStore).add(chunks.capture());
+    assertEquals(CANDIDATE_NAME, saved.getCandidateName());
+    assertEquals("Resume Alias", chunks.getValue().getFirst().getMetadata().get("candidateName"));
+    assertEquals("United Kingdom", chunks.getValue().getFirst().getMetadata().get("country"));
+    assertEquals("[\"Java\"]", chunks.getValue().getFirst().getMetadata().get("skills"));
   }
 
   @Test

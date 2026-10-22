@@ -5,17 +5,23 @@ resumes, and find candidates whose experience best matches an open position. It 
 retrieval over indexed resume content with an AI ranking pipeline and returns up to three
 evidence-backed candidate matches.
 
+![recruitment-agent-matches-01.png](docs/images/recruitment-agent-matches-01.png)
+
 ## Features
 
 - Browse, create, and edit job offers stored in MongoDB.
 - Upload PDF resumes. The application extracts candidate email from the PDF, stores resume metadata
   in MongoDB, and retains the original PDF locally for download.
-- Extract and normalize resume text, split it into chunks, create embeddings locally, and index the
-  chunks in ChromaDB.
+- Extract and normalize resume text, use the configured chat model to derive grounded metadata,
+  split the full text into chunks, create embeddings locally, and index the chunks in ChromaDB.
 - Match resumes against a selected job offer and show up to three ranked candidates, with matched
   skills and relevant work experience.
 - Download an uploaded resume through the application.
 - Use a single-page frontend built with HTML, CSS, Bootstrap, and vanilla JavaScript.
+
+![recruitment-agent-new-job-offer-01.png](docs/images/recruitment-agent-new-job-offer-01.png)
+<br/><br/>
+![recruitment-agent-explanations-01.png](docs/images/recruitment-agent-explanations-01.png)
 
 ## Architecture
 
@@ -68,6 +74,35 @@ calls through `ChatClient`. It does not rely on a single retrieval-augmented adv
 whole ranking operation; keeping these stages explicit lets the application bound the candidate
 pool and validate evidence between model calls.
 
+### Resume PDF indexing flow
+
+When a resume is uploaded, `ResumePdfIndexer` performs the following steps:
+
+1. `PagePdfDocumentReader` extracts page-level text. Empty, unreadable, or textless PDFs are rejected;
+   the first valid email found in the extracted text is used as the candidate identity.
+2. Page text is whitespace-normalized. The normalized pages are also joined and sent to
+   `ResumeMetadataExtractor`, which uses the configured resume-metadata `ChatClient` and prompt to
+   derive candidate name, country, position, skills, professional experience, allocation, relocation,
+   and expected salary. By default, metadata extraction is enabled, its input is capped at 20,000
+   characters, and it has a 30-second timeout.
+3. Returned scalar values and individual skills are retained only when their normalized text occurs
+   in the supplied resume text. This grounding check reduces unsupported metadata; it is not a
+   guarantee that every extracted value is correct. If extraction is disabled, times out, or fails,
+   indexing continues with empty extracted metadata.
+4. The complete normalized page documents—not just the bounded metadata-extraction input—are split
+   using the configured `TokenTextSplitter` settings (defaults: 800-token chunks and at most 100
+   chunks). Each chunk keeps its text as retrieval evidence and receives the candidate email,
+   document ID, file name, and available extracted fields as metadata. Skills are stored as a JSON
+   string; position and allocation also have normalized values for metadata filtering.
+5. Spring AI creates embeddings locally and the resulting documents are added to ChromaDB. A new
+   upload gets its own document ID/version. Existing indexed resumes are not retroactively enriched;
+   re-upload/re-indexing is needed for new metadata to appear on their chunks.
+
+The metadata LLM call is separate from embedding generation. It sends up to the configured character
+limit of resume text to the chat provider, while embeddings remain local. Extraction can be disabled
+with `RESUME_INDEXING_METADATA_EXTRACTION_ENABLED=false`; the extraction input limit, timeout, and
+prompt resource are configurable in `application.properties`.
+
 ## Application API
 
 The main API routes are:
@@ -106,42 +141,53 @@ it does not guarantee that a model's judgment is objectively correct.
 
 Candidate matching is split into bounded retrieval, map, and reduce stages.
 
-1. **Retrieve broadly.** Query the vector store with the offer’s position, required skills,
-   responsibilities, location, and working mode. Retrieve a configurable pool—perhaps 30–50 resume
-   chunks—instead of only 3. The exact value should be tuned against vector store quality, latency,
-   and model context limits.
+1. **Retrieve seed chunks.** The query is built from the offer's position, description,
+   qualifications, responsibilities, preferred qualifications, location, and working mode. When
+   position and/or allocation are present, the first Chroma search also applies the corresponding
+   normalized metadata filters. If that search fails or returns fewer than the configured retrieval
+   limit, the retriever searches without those filters, merges results without duplicate chunk IDs,
+   and caps the seed pool at `retrieval-top-k` (default 1,200). Skills and location are semantic query
+   content, not exact metadata filters.
+2. **Select current candidate versions.** Seed hits are grouped by candidate email and document ID.
+   MongoDB is used to exclude stale resume versions and to cap selection to the configured candidate
+   limit (default 100), prioritizing candidates with the strongest seed similarity.
+3. **Hydrate each selected candidate.** The retriever fetches that candidate version's matching
+   chunks from ChromaDB, bounded by the resume chunk limit. These per-candidate hydration searches
+   currently run sequentially; the initial candidate discovery is not itself parallelized by the
+   map executor.
+4. **Assemble evidence.** `CandidateEvidenceAssembler` checks candidate/version metadata against
+   MongoDB, discards invalid, stale, and duplicate chunks, and groups exact source text under each
+   candidate. It enforces the configured evidence-character budget per candidate (default 24,000).
+5. **Map in parallel batches.** Candidates are divided into batches (default three candidates per
+   batch). `CandidateMapEvaluator` submits one task per batch to Java 21's
+   `Executors.newVirtualThreadPerTaskExecutor()`. A semaphore limits the number of concurrently
+   active model requests to `max-concurrency` (default 10); additional virtual-thread tasks wait for
+   a permit. Each structured response is validated against its batch, including candidate identity,
+   score range, chunk ID, and exact evidence quote. A failed batch fails the matching request rather
+   than silently returning a partial map.
+6. **Reduce the shortlist.** The application sorts the validated map scores and passes at most
+   `shortlist-size` candidates (default three), with their source evidence, to one final model call.
+   The reducer validates the response and evidence, sorts by final matching probability, and returns
+   at most `result-limit` candidates (default three).
 
-2. **Map over chunks.** For each retrieved chunk, assess relevance to the job and extract only
-   evidence present in that chunk: candidate identifier, skills, relevant experience, location, and
-   work mode. Keep the vector similarity score as a retrieval signal; don’t treat it as the final
-   match score.
+Map scores are internal shortlist-selection values, not the final match probabilities. Missing
+evidence remains unknown, and an invalid or unsupported model response is rejected rather than
+returned as a candidate claim.
 
-3. **Group by candidate.** Use a stable candidate ID in document metadata, if available. Group
-   chunks by that ID so multiple chunks from one resume don’t crowd out distinct candidates. If
-   metadata lacks an ID, adding one at resume ingestion is a useful prerequisite.
+### Parallel requests and virtual threads
 
-4. **Reduce evidence per candidate.** Combine a candidate’s chunks, remove duplicates, and produce a
-   compact evidence summary with source chunk references. Score each candidate against required
-   criteria and nice-to-haves. Missing evidence should stay unknown rather than being treated as
-   either a match or a mismatch.
+The matching endpoint does not impose a single global queue or serialize separate incoming HTTP
+requests. Each request executes its own retrieval, hydration, map, and reduce flow. Within each
+request, only the map-batch stage explicitly fans out work: a virtual-thread-per-task executor
+allows blocking chat calls to wait without dedicating a platform thread per call, and a semaphore
+caps active map calls for that request. Virtual threads reduce thread overhead; they do not increase
+provider quotas or remove latency, and the semaphore is not a process-wide limit across requests.
 
-5. **Use tiers to spend model effort selectively.** Apply inexpensive filtering or scoring first,
-   then ask the model for a deeper structured evaluation of a smaller shortlist—say the top 10–15
-   candidates. A final comparison pass can order that shortlist and return up to three candidates.
-   Keep the required and preferred criteria distinct, and validate identities and evidence against
-   the retrieved documents.
-
-6. **Return three unique candidates.** Sort by the final evaluation, deduplicate by candidate
-   ID/email, assign positions, then take the first three. Return fewer when fewer than three
-   candidates have sufficient retrieved evidence; never fill empty slots by inventing candidates.
-
-Map scores are internal selection values; they are not exposed as final match probabilities. A
-failed batch or invalid final response fails the matching request rather than returning a partial
-ranking.
-
-Map batches use bounded concurrency. Candidate hydration searches currently run sequentially, so
-retrieval latency can grow with the number of selected candidates and each candidate's Chroma query
-latency.
+Consequently, if several matching requests arrive at once, their map calls can overlap and each
+request applies its own `max-concurrency` bound. Total active map calls across the application can
+therefore exceed that configured per-request value. Retrieval, candidate hydration, and the single
+final reducer call remain sequential within each request. Metadata extraction during upload also
+uses a virtual thread with a timeout, but it is a separate workflow from candidate matching.
 <p style="text-align: center">
     <img src="docs/images/map-reduce-tiered-ranking-pipeline.png" width="300">
 </p>
@@ -303,30 +349,30 @@ through Spring environment variables or properties.
 | `CANDIDATE_MATCHING_PIPELINE_MAX_CANDIDATES`                   | `100`                       | Maximum distinct candidates evaluated       |
 | `CANDIDATE_MATCHING_PIPELINE_MAP_BATCH_SIZE`                   | `3`                         | Candidates evaluated per map batch          |
 | `CANDIDATE_MATCHING_PIPELINE_SHORTLIST_SIZE`                   | `3`                         | Candidates passed to final ranking          |
-| `CANDIDATE_MATCHING_PIPELINE_MAX_CONCURRENCY`                  | `5`                         | Concurrent map requests                     |
+| `CANDIDATE_MATCHING_PIPELINE_MAX_CONCURRENCY`                  | `10`                        | Active map requests per matching request    |
 | `CANDIDATE_MATCHING_PIPELINE_MAX_EVIDENCE_CHARS_PER_CANDIDATE` | `24000`                     | Retrieved evidence limit per candidate      |
+| `RESUME_INDEXING_METADATA_EXTRACTION_ENABLED`                  | `true`                      | Enable LLM-derived resume metadata           |
+| `RESUME_INDEXING_METADATA_EXTRACTION_MAX_CHARS`                | `20000`                     | Maximum resume chars sent for extraction    |
+| `RESUME_INDEXING_METADATA_EXTRACTION_TIMEOUT`                  | `30s`                       | Metadata extraction timeout                 |
 
 Retained PDFs are stored under `${user.home}/data/recruitment-agent/resume/`. Resume chunking can be
 adjusted with `RESUME_INDEXING_CHUNK_SIZE`, `RESUME_INDEXING_MIN_CHUNK_SIZE_CHARS`,
 `RESUME_INDEXING_MIN_CHUNK_LENGTH_TO_EMBED`, `RESUME_INDEXING_MAX_NUM_CHUNKS`, and
 `RESUME_INDEXING_KEEP_SEPARATOR`.
 
-The candidate matching `ChatClient` uses Spring AI's `SimpleLoggerAdvisor` as a default advisor.
-Prompt/completion observation logging is enabled, and the advisor logger is set to `DEBUG`; these
-logs can contain full job and resume content, candidate contact details, and model responses.
-Restrict access to application logs and avoid enabling these settings in environments where that 
-data must not be recorded.
+Resume metadata extraction and candidate matching send resume text/evidence to the configured chat
+provider. Prompt and completion observation logging is disabled in the default application
+configuration; review provider data handling and logging settings before deploying sensitive resume
+data. Extraction failures log a generic warning and continue indexing without extracted metadata.
 
 ## Application Gaps
 
-### Chat diagnostics can record candidate data
+### Chat-provider handling of resume data
 
-The current Spring AI observation settings and `SimpleLoggerAdvisor` DEBUG logger can write prompt
-and completion payloads—including resume content, candidate contact details, and model responses—to
-application logs. This conflicts with the ranking feature's privacy requirement not to log that
-data.
-Restrict log access and retention; the application is not compliant with that requirement until
-logging is redacted or disabled.
+Resume metadata extraction and candidate ranking send resume text/evidence to the configured chat
+provider. Prompt/completion observation logging is disabled by the default application properties,
+but operators should verify the selected provider's data handling and review any logging overrides
+before processing sensitive resumes.
 
 ### Resume replacement can leave inconsistent data
 

@@ -15,6 +15,8 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.io.IOException;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.service.matching.model.CandidateMapResponse;
 import net.wowdev.recruitment.agent.service.matching.model.CandidateMapResult;
@@ -50,17 +52,38 @@ class CandidateMapEvaluatorTest {
   void evaluatesAllBatchesAndReturnsEveryCandidateMapResult() {
     CandidateMatchingPipelineProperties properties = new CandidateMatchingPipelineProperties();
     properties.setMapBatchSize(2);
+    properties.setMaxConcurrency(2);
     CandidateMapEvaluator evaluator = spy(new CandidateMapEvaluator(mock(ChatClient.class), properties));
+    AtomicBoolean allTasksUseVirtualThreads = new AtomicBoolean(true);
+    AtomicInteger activeBatches = new AtomicInteger();
+    AtomicInteger maxActiveBatches = new AtomicInteger();
     doAnswer(
             invocation ->
-                ((List<CandidateResumeEvidence>) invocation.getArgument(1))
-                    .stream()
-                    .map(
-                        candidate ->
-                            new CandidateMapResult(
-                                candidate.candidateEmail(), 80, List.of(), List.of(),
-                                List.of(new EvidenceCitation(candidate.chunks().getFirst().chunkId(), "resume text"))))
-                    .toList())
+                {
+                  if (!Thread.currentThread().isVirtual()) {
+                    allTasksUseVirtualThreads.set(false);
+                  }
+                  int active = activeBatches.incrementAndGet();
+                  maxActiveBatches.accumulateAndGet(active, Math::max);
+                  try {
+                    Thread.sleep(20);
+                    return ((List<CandidateResumeEvidence>) invocation.getArgument(1))
+                        .stream()
+                        .map(
+                            candidate ->
+                                new CandidateMapResult(
+                                    candidate.candidateEmail(),
+                                    80,
+                                    List.of(),
+                                    List.of(),
+                                    List.of(
+                                        new EvidenceCitation(
+                                            candidate.chunks().getFirst().chunkId(), "resume text"))))
+                        .toList();
+                  } finally {
+                    activeBatches.decrementAndGet();
+                  }
+                })
         .when(evaluator)
         .evaluateBatch(any(), any());
 
@@ -68,6 +91,8 @@ class CandidateMapEvaluatorTest {
 
     assertEquals(5, result.size());
     verify(evaluator, org.mockito.Mockito.times(3)).evaluateBatch(any(), any());
+    assertTrue(allTasksUseVirtualThreads.get());
+    assertTrue(maxActiveBatches.get() <= properties.getMaxConcurrency());
   }
 
   @Test
