@@ -14,7 +14,8 @@ class CandidateMatchingPipelinePropertiesTest {
   @Test
   void bindsDefaultsAndOverrides() {
     CandidateMatchingPipelineProperties defaults = new CandidateMatchingPipelineProperties();
-    assertEquals(120, defaults.getRetrievalTopK());
+    assertEquals(1200, defaults.getRetrievalTopK());
+    assertEquals(100, defaults.getMaxCandidates());
     assertEquals(3, defaults.getMapBatchSize());
     assertEquals(3, defaults.getShortlistSize());
     assertEquals(3, defaults.getResultLimit());
@@ -25,7 +26,8 @@ class CandidateMatchingPipelinePropertiesTest {
         new Binder(
                 new MapConfigurationPropertySource(
                     Map.of(
-                        "candidate.matching.pipeline.retrieval-top-k", "120",
+                        "candidate.matching.pipeline.retrieval-top-k", "2400",
+                        "candidate.matching.pipeline.max-candidates", "80",
                         "candidate.matching.pipeline.map-batch-size", "4",
                         "candidate.matching.pipeline.shortlist-size", "8",
                         "candidate.matching.pipeline.result-limit", "2",
@@ -33,7 +35,8 @@ class CandidateMatchingPipelinePropertiesTest {
                         "candidate.matching.pipeline.max-evidence-chars-per-candidate", "15000")))
             .bind("candidate.matching.pipeline", Bindable.of(CandidateMatchingPipelineProperties.class))
             .orElseThrow(IllegalStateException::new);
-    assertEquals(120, configured.getRetrievalTopK());
+    assertEquals(2400, configured.getRetrievalTopK());
+    assertEquals(80, configured.getMaxCandidates());
     assertEquals(4, configured.getMapBatchSize());
     assertEquals(8, configured.getShortlistSize());
     assertEquals(2, configured.getResultLimit());
@@ -46,7 +49,9 @@ class CandidateMatchingPipelinePropertiesTest {
     CandidateMatchingPipelineProperties properties = new CandidateMatchingPipelineProperties();
 
     assertThrows(IllegalArgumentException.class, () -> properties.setRetrievalTopK(0));
-    assertThrows(IllegalArgumentException.class, () -> properties.setRetrievalTopK(1001));
+    assertThrows(IllegalArgumentException.class, () -> properties.setRetrievalTopK(10001));
+    assertThrows(IllegalArgumentException.class, () -> properties.setMaxCandidates(0));
+    assertThrows(IllegalArgumentException.class, () -> properties.setMaxCandidates(1001));
     assertThrows(IllegalArgumentException.class, () -> properties.setMapBatchSize(11));
     assertThrows(IllegalArgumentException.class, () -> properties.setShortlistSize(21));
     assertThrows(IllegalArgumentException.class, () -> properties.setResultLimit(4));

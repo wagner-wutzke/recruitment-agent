@@ -35,7 +35,8 @@
   shortlist, per-candidate evidence budget, similarity threshold, and legacy retrieval default;
   verify that 20,000-character evidence fits, over-budget evidence fails visibly, and the default
   final model request contains only the top three shortlisted candidates. Evidence:
-  defaults are retrieval top K 120, map batch 3, shortlist 3, result limit 3, concurrency 2, and
-  evidence budget 24,000 characters; matching defaults are threshold 0.5 and legacy top K 10.
+  defaults are retrieval top K 1,200, distinct-candidate cap 100, map batch 3, shortlist 3,
+  result limit 3, map concurrency 5, and evidence budget 24,000 characters; matching defaults are
+  threshold 0.5 and legacy top K 10.
   The 20,000-character assembler, over-budget, and default shortlist request tests pass; clean
   verify passed all 127 tests.

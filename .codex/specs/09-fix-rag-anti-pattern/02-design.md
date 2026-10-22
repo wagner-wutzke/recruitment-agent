@@ -13,10 +13,11 @@ the existing `VectorStore`, `ResumeRepository`, and configured `ChatClient`.
 
 Proposed components:
 
-- `CandidateMatchingPipelineProperties`: validated limits for retrieval, map batching, shortlist,
-  result count, and concurrency.
-- `CandidateResumeRetriever`: runs one offer-specific Vector Store search and normalizes retrieved
-  chunks, preserving their IDs, text, metadata, and similarity ordering where available.
+- `CandidateMatchingPipelineProperties`: validated limits for retrieval, distinct-candidate
+  selection, map batching, shortlist, result count, and concurrency.
+- `CandidateResumeRetriever`: runs bounded offer-specific Vector Store discovery, groups chunk hits
+  into current distinct candidate/resume-version identities, caps the discovery candidates, then
+  hydrates complete evidence for only those selected versions.
 - `CandidateEvidenceAssembler`: validates metadata, resolves the current resume version through
   `ResumeRepository`, discards stale chunks, deduplicates chunks, and groups evidence by normalized
   candidate email plus current document ID.
@@ -27,9 +28,11 @@ Proposed components:
 - `OpenAiCandidateRanker`: delegates its `rank(offer)` operation to the pipeline and translates
   validated final results to the existing ranker result type.
 
-Do not run one LLM request over the entire candidate pool. Map batches may execute with bounded
-concurrency. Wait for all required batches; a failed batch fails the whole matching request. The
-final reduce call runs once and receives only the shortlist.
+Do not run one LLM request over the entire candidate pool. Candidate hydration searches run
+sequentially, one filtered Vector Store query per selected candidate. Map batches execute with
+bounded concurrency using `candidate.matching.pipeline.max-concurrency` (current default `5`). Wait
+for all required batches; a failed batch fails the whole matching request. The final reduce call
+runs once and receives only the shortlist.
 
 ```mermaid
 flowchart TD
@@ -54,11 +57,34 @@ allocation/working mode. Use a `SearchRequest` against the existing `VectorStore
 configured inclusive similarity threshold and retrieval pool size. Retrieval pool size is a
 document/chunk limit, not a candidate count.
 
-The initial search discovers relevant candidates and their resume document IDs. For each discovered
-email/document ID pair, run a second Vector Store search filtered by both metadata values, using the
-same job query, no additional similarity cutoff, and `resume.indexing.max-num-chunks` as the per-
-resume result limit. This hydrates all indexed chunks for each discovered resume without widening
-candidate discovery beyond the configured initial retrieval pool.
+The initial search discovers candidate identities and resume document IDs from a bounded chunk pool.
+Because this pool is chunk-based, one resume can contribute many hits; therefore, the chunk top-K is
+not itself a candidate limit and must not be treated as one. Group seed chunks by normalized
+candidate email and document ID, retaining each group's strongest seed similarity score (and its
+original result rank for compatibility when scores are unavailable). Batch-load current resume
+records and discard groups whose document ID is stale before applying the candidate cap. Rank
+remaining groups by strongest similarity score descending; if scores are unavailable for a group,
+preserve vector-store result ordering for that group. Break equal-score ties by normalized email
+ascending, then document ID ascending. Retain at most the configured number of distinct current
+candidates.
+
+Use a larger but still bounded discovery pool than the previous 120-chunk default, with a proposed
+default of 1,200 chunks and a separate proposed maximum of 100 distinct candidates. These defaults
+reduce the chance that a few chunk-rich resumes crowd out other candidates while bounding MongoDB
+lookups, hydration searches, and downstream model work. Both limits are configurable and validated;
+the chunk limit remains subject to a safe upper bound. This approach improves candidate diversity
+but cannot guarantee discovery of candidates outside the vector store's top-K results; tune it using
+recall, latency, and token metrics.
+
+For each selected email/document ID pair, run a second Vector Store search filtered by both metadata
+values, using the same job query, no additional similarity cutoff, and
+`resume.indexing.max-num-chunks` as the per-resume result limit. This hydrates selected resumes
+without allowing duplicate chunks from one candidate to consume multiple candidate slots. The seed
+chunks are discovery signals only; final candidate evidence comes from the candidate-scoped
+hydration so that unselected candidates and stale seed chunks cannot leak into ranking.
+Hydration is currently sequential, so the worst case performs one discovery query plus one hydration
+query per selected candidate. Do not describe this stage as parallel; any future concurrency change
+must also bound total load across simultaneous matching requests.
 
 For every returned chunk:
 
@@ -103,9 +129,6 @@ Map prompt and response are separate from final ranking:
   cannot be validated by exact word and punctuation sequence, allowing whitespace-only
   normalization for PDF line wrapping. Continue to reject invalid identities, scores, and required
   score evidence; never pass unsupported optional claims downstream as supported.
-- Discard individual matched-skill or experience claims if their text is blank or their chunk quote
-  cannot be validated exactly. Continue to reject invalid identities, scores, and required score
-  evidence; never pass unsupported optional claims downstream as supported.
 - If a batch is malformed or fails, fail the full ranking operation. Do not continue with a partial
   pool.
 
@@ -146,11 +169,12 @@ per-candidate evidence budget.
 
 | Property                                       |                                Proposed default | Purpose                                         |
 |------------------------------------------------|------------------------------------------------:|-------------------------------------------------|
-| `candidate.matching.pipeline.retrieval-top-k`  |                                           `120` | Maximum retrieved resume chunks                 |
+| `candidate.matching.pipeline.retrieval-top-k`  |                                          `1200` | Maximum chunks used to discover candidates      |
+| `candidate.matching.pipeline.max-candidates`   |                                           `100` | Maximum distinct candidates evaluated           |
 | `candidate.matching.pipeline.map-batch-size`   |                                             `3` | Candidate groups per map request                |
 | `candidate.matching.pipeline.shortlist-size`   |                                             `3` | Candidate groups passed to final reduction      |
 | `candidate.matching.pipeline.result-limit`     |                                             `3` | Maximum API results; values above 3 are invalid |
-| `candidate.matching.pipeline.max-concurrency`  |                                             `2` | Maximum simultaneous map requests               |
+| `candidate.matching.pipeline.max-concurrency`  |                                             `5` | Maximum simultaneous map requests               |
 | `candidate.matching.pipeline.max-evidence-chars-per-candidate` | `24000` | Complete retrieved evidence limit per candidate |
 | `candidate.matching.map-prompt-file`           |   `classpath:prompts/candidate-ranking-map.txt` | Map-stage prompt resource                       |
 | `candidate.matching.final-ranking-prompt-file` | `classpath:prompts/candidate-ranking-final.txt` | Final-stage prompt resource                     |
@@ -182,7 +206,12 @@ new retrieval pool, so two settings cannot silently control the same request.
   request-scoped; do not persist them.
 - Treat job and resume text as untrusted data. Prompts must explicitly prevent document text from
   changing system instructions or requesting disclosure of other candidates' information.
-- Do not log model credentials, resume text, candidate contact details, or full prompt payloads.
+- `SimpleLoggerAdvisor` is registered as the default `ChatClient` advisor. Current configuration
+  enables prompt/completion observation logging and `SimpleLoggerAdvisor` DEBUG logging, which can
+  record resume text, candidate contact details, job data, and model responses. Treat application
+  logs as sensitive data and restrict access/retention accordingly. This current behavior conflicts
+  with the privacy requirement in `01-requirements.md`; it is a documented implementation gap, not
+  an approved relaxation of that requirement.
 
 ## 7. Failure Handling
 
@@ -200,8 +229,13 @@ new retrieval pool, so two settings cannot silently control the same request.
 
 - Property tests cover defaults, overrides, positive-value validation, upper bounds, and the
   result-limit maximum of three.
-- Retriever tests capture the `SearchRequest` and verify all job criteria, retrieval top K, and
-  similarity threshold.
+- Retriever tests capture the discovery `SearchRequest` and verify all job criteria, retrieval top
+  K, and similarity threshold. They also verify grouping multiple chunks from one candidate,
+  normalized-email deduplication, removal of stale resume versions before the candidate cap,
+  selection by each candidate's strongest seed similarity score, deterministic normalized-email
+  tie-breaking, preservation of vector-store order when scores are absent, the distinct-candidate
+  limit, candidate-scoped hydration filters, and exclusion of unselected seed chunks from returned
+  evidence.
 - Evidence assembler tests cover missing metadata, unknown/current/stale resume document IDs,
   normalized email grouping, duplicate chunk removal, and candidate identity resolution.
 - Map evaluator tests verify bounded batches, one result per candidate, score scale, input identity
@@ -222,6 +256,12 @@ new retrieval pool, so two settings cannot silently control the same request.
 - Revisit retrieval and request-size defaults using production latency, recall, and model token
   metrics after deployment; the current defaults are conservative initial values, not measured
   production optima.
+- Candidate-scoped hydration is sequential in the current implementation; retrieval latency can
+  grow linearly with selected-candidate count. The configured concurrency currently applies to map
+  requests, not hydration searches.
+- The larger chunk discovery pool and distinct-candidate cap mitigate chunk-dominated discovery,
+  but do not provide global recall guarantees. Evaluate distinct-candidate recall and search cost
+  against representative resume corpora before further increasing either limit.
 - Confirm the `0..100` map score contract and deterministic tie-break rules.
 - `candidate.matching.top-k` is retained as a compatibility-only property; new matching behavior
   must use `candidate.matching.pipeline.retrieval-top-k`.

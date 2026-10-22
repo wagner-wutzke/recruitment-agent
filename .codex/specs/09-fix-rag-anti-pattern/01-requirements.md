@@ -65,6 +65,12 @@ Job offer
   qualifications, responsibilities, nice-to-have criteria, location, and working mode.
 - Retrieve a configurable candidate pool of Vector Store resume chunks. The retrieval pool size must
   be separate from the final result limit and must permit retrieval of more than three chunks.
+- Group discovery chunks by normalized candidate email and current resume document ID before
+  selecting candidates. Duplicate chunks from one candidate must not consume multiple candidate
+  slots.
+- Bound the number of distinct candidates selected for mapping with a configurable positive limit.
+  Order candidates by their strongest discovery result, using normalized email as a deterministic
+  tie-break.
 - Apply the configured similarity threshold to retrieval and preserve the existing behavior that a
   result exactly at the threshold is eligible.
 - Exclude retrieved chunks with missing candidate email or resume document ID metadata from model

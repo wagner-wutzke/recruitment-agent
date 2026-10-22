@@ -1,27 +1,30 @@
 Create 40 CV (Curriculum Vitae) files in PDF format. 
-1. Each candidate has following fields:
+1. Each candidate has the following fields:
   - Candidate Name
   - Candidate Email
-  - Country: random country.
+  - Country: random LATAM country .
   - City: random City in the selected country
   - Position: must be one of the following:
     - Java Senior Backend Engineer
+    - Java Senior Fullstack Engineer
+    - Java AWS Engineer
+    - Java IA Engineer
     - Python Software Engineer
     - Salesforce Senior Developer
-    - AWS Java Developer
-    - Python Backend Senior Engineer
     - Salesforce Technical Architect
-    - Node / Typescript Full-Stack Engineer
+    - Python Backend Senior Engineer
     - Python AI Agents Developer
     - Go Backend Developer
     - Node Fullstack Engineer
+    - Node / TypeScript Fullstack Engineer
   - Skills: at least 7 necessary skills in the selected Position area (be very creative)
   - Working Mode Allocation: Remote, Hybrid, or In-house.
   - Relocation Readiness: Yes / No.
   - Expected Salary Range per year: value and currency.
-2. All those fields are to be shown in a table format (without header).
+
+2. All these fields are to be shown in a table format (without header).
   
-3. Each candidate must have 4 to 6 different professional experiences in his/her history. (be very creative)
+3. Each candidate must have 4 to 6 different professional experiences in his/her history (be very creative).
   - A previous experience can be in another random position (not only from the give list).
   - Each experience must have specific timeline dates, a random company and activity area in its description.
   - Each experience must contain 3 to 5 different technical responsibilities (be very creative).

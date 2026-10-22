@@ -107,9 +107,14 @@ it does not guarantee that a model's judgment is objectively correct.
 Candidate matching is split into bounded retrieval, map, and reduce stages.
 
 1. **Retrieve:** Build a search question from the selected job offer’s position, description,
-   qualifications, responsibilities, nice-to-have criteria, location, and working mode. Use the
-   configured similarity threshold and chunk limit to discover candidates, then fetch all indexed
-   chunks for each discovered candidate’s current resume version (up to the resume index chunk cap).
+   qualifications, responsibilities, nice-to-have criteria, location, and working mode. Search up
+   to the configured chunk top-K using the similarity threshold. Group hits by normalized email and
+   resume version, batch-check current versions against MongoDB, discard stale versions, and retain
+   up to the configured number of distinct candidates. Candidates are ordered by their strongest
+   hit score; normalized email and document ID break ties. If scores are unavailable, vector result
+   order is used. The retriever then hydrates each selected candidate sequentially with a
+   candidate/version-filtered Chroma search, up to the resume index chunk cap. Only validated
+   hydration results are returned; seed hits are discovery signals and are not included directly.
 2. **Assemble evidence:** Validate each result’s candidate and document metadata against the current
    MongoDB resume record, remove stale or duplicate chunks, and group evidence by candidate. This
    prevents an older indexed resume version from being ranked after an upload replaces it.
@@ -123,6 +128,10 @@ Candidate matching is split into bounded retrieval, map, and reduce stages.
 Map scores are internal selection values; they are not exposed as final match probabilities. A
 failed batch or invalid final response fails the matching request rather than returning a partial
 ranking.
+
+Map batches use bounded concurrency. Candidate hydration searches currently run sequentially, so
+retrieval latency can grow with the number of selected candidates and each candidate's Chroma query
+latency.
 <p style="text-align: center">
     <img src="docs/images/map-reduce-tiered-ranking-pipeline.png" width="300">
 </p>
@@ -219,16 +228,11 @@ docker run -d --name recruitment-mongodb \
   mongo:latest
 ```
 
-The application defaults to `mongodb://localhost:27017/recruitment_agent`. It reads `MONGODB_URI`
-when provided; set it for the authenticated Docker container:
-
-```bash
-export MONGODB_URI='mongodb://admin:secret_password@localhost:27017/recruitment_agent?authSource=admin'
-```
-
-This URI setting is used by both local runs and deployments, avoiding separate hard-coded MongoDB
-credentials in application configuration. If you change the container credentials or database,
-update the URI accordingly.
+The application connects using the MongoDB host, port, database, authentication database, username,
+and password configured in `src/main/resources/application.properties`. The local Docker settings
+above use `localhost:27017`, database `recruitment_agent`, authentication database `admin`, and the
+shown `admin` credentials. If you change the container credentials or database, update those
+individual application properties to match.
 
 Start ChromaDB:
 
@@ -283,12 +287,13 @@ through Spring environment variables or properties.
 | Setting                                                        | Default                     | Purpose                                     |
 |----------------------------------------------------------------|-----------------------------|---------------------------------------------|
 | `OPENAI_API_KEY`                                               | Empty                       | API key for candidate ranking chat requests |
-| `CANDIDATE_MATCHING_MODEL`                                     | `gpt-6-luna`                | Chat model used for map and final ranking   |
+| `CANDIDATE_MATCHING_MODEL`                                     | `gpt-5.6-sol`               | Chat model used for map and final ranking   |
 | `CHROMA_HOST` / `CHROMA_PORT`                                  | `http://localhost` / `8000` | ChromaDB endpoint                           |
-| `CANDIDATE_MATCHING_PIPELINE_RETRIEVAL_TOP_K`                  | `120`                       | Maximum retrieved chunks                    |
+| `CANDIDATE_MATCHING_PIPELINE_RETRIEVAL_TOP_K`                  | `1200`                      | Maximum chunks used to discover candidates   |
+| `CANDIDATE_MATCHING_PIPELINE_MAX_CANDIDATES`                   | `100`                       | Maximum distinct candidates evaluated        |
 | `CANDIDATE_MATCHING_PIPELINE_MAP_BATCH_SIZE`                   | `3`                         | Candidates evaluated per map batch          |
 | `CANDIDATE_MATCHING_PIPELINE_SHORTLIST_SIZE`                   | `3`                         | Candidates passed to final ranking          |
-| `CANDIDATE_MATCHING_PIPELINE_MAX_CONCURRENCY`                  | `2`                         | Concurrent map requests                     |
+| `CANDIDATE_MATCHING_PIPELINE_MAX_CONCURRENCY`                  | `5`                         | Concurrent map requests                     |
 | `CANDIDATE_MATCHING_PIPELINE_MAX_EVIDENCE_CHARS_PER_CANDIDATE` | `24000`                     | Retrieved evidence limit per candidate      |
 
 Retained PDFs are stored under `${user.home}/data/recruitment-agent/resume/`. Resume chunking can be
@@ -296,11 +301,26 @@ adjusted with `RESUME_INDEXING_CHUNK_SIZE`, `RESUME_INDEXING_MIN_CHUNK_SIZE_CHAR
 `RESUME_INDEXING_MIN_CHUNK_LENGTH_TO_EMBED`, `RESUME_INDEXING_MAX_NUM_CHUNKS`, and
 `RESUME_INDEXING_KEEP_SEPARATOR`.
 
+The candidate matching `ChatClient` uses Spring AI's `SimpleLoggerAdvisor` as a default advisor.
+Prompt/completion observation logging is enabled, and the advisor logger is set to `DEBUG`; these
+logs can contain full job and resume content, candidate contact details, and model responses. Restrict
+access to application logs and avoid enabling these settings in environments where that data must
+not be recorded.
+
 ## Application Gaps
 
-### Resume replacement can leave inconsistent data
+### Chat diagnostics can record candidate data
+The current Spring AI observation settings and `SimpleLoggerAdvisor` DEBUG logger can write prompt
+and completion payloads—including resume content, candidate contact details, and model responses—to
+application logs. This conflicts with the ranking feature's privacy requirement not to log that data.
+Restrict log access and retention; the application is not compliant with that requirement until
+logging is redacted or disabled.
 
+### Resume replacement can leave inconsistent data
 The upload path writes new vectors, saves MongoDB metadata, then deletes old vectors. If the MongoDB
 save fails, the new vectors are rolled back; but if deleting old vectors fails, the upload still
 reports success and leaves stale chunks. A crash between these operations can also leave MongoDB,
-ChromaDB, and the retained PDF out of sync. See ResumeUploadService.java.
+ChromaDB, and the retained PDF out of sync. See `ResumeUploadService.java`.
+
+### Same-name candidates can overwrite retained PDFs
+Files are named from candidate name, but resume identity is email. See `ResumeFileStorage.java`.

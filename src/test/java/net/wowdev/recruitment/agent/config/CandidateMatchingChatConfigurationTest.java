@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,6 +19,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -44,10 +44,13 @@ class CandidateMatchingChatConfigurationTest {
     assertSame(expected, actual);
     ArgumentCaptor<Resource> resourceCaptor = ArgumentCaptor.forClass(Resource.class);
     ArgumentCaptor<Charset> charsetCaptor = ArgumentCaptor.forClass(Charset.class);
+    ArgumentCaptor<Advisor[]> advisorsCaptor = ArgumentCaptor.forClass(Advisor[].class);
     verify(builder).defaultSystem(resourceCaptor.capture(), charsetCaptor.capture());
-    verify(builder, never()).defaultAdvisors(any(Advisor[].class));
+    verify(builder).defaultAdvisors(advisorsCaptor.capture());
     assertSame(systemPrompt, resourceCaptor.getValue());
     assertEquals(StandardCharsets.UTF_8, charsetCaptor.getValue());
+    assertEquals(1, advisorsCaptor.getValue().length);
+    assertTrue(advisorsCaptor.getValue()[0] instanceof SimpleLoggerAdvisor);
   }
 
   @Test
@@ -109,6 +112,7 @@ class CandidateMatchingChatConfigurationTest {
   private ChatClient.Builder configuredBuilder() {
     ChatClient.Builder builder = mock(ChatClient.Builder.class);
     when(builder.defaultSystem(any(Resource.class), any(Charset.class))).thenReturn(builder);
+    when(builder.defaultAdvisors(any(Advisor[].class))).thenReturn(builder);
     return builder;
   }
 

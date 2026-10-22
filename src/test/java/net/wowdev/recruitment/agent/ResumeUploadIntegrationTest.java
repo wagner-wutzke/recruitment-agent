@@ -41,7 +41,12 @@ import org.springframework.test.web.servlet.MvcResult;
 
 @SpringBootTest(
     properties = {
-      "spring.mongodb.uri=${MONGODB_URI:mongodb://${MONGODB_USERNAME:admin}:${MONGODB_PASSWORD:secret_password}@localhost:27017/resume_upload_integration_test?authSource=${MONGODB_AUTHENTICATION_DATABASE:admin}}",
+      "spring.mongodb.authentication-database=admin",
+      "spring.mongodb.host=localhost",
+      "spring.mongodb.port=27017",
+      "spring.mongodb.database=resume_upload_integration_test",
+      "spring.mongodb.username=admin",
+      "spring.mongodb.password=secret_password",
       "spring.ai.vectorstore.chroma.collection-name=resume-upload-integration-test",
       "spring.ai.vectorstore.chroma.initialize-schema=true",
       "spring.ai.openai.api-key=test-only-not-a-real-openai-key"

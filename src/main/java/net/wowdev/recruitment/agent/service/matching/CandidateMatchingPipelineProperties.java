@@ -5,7 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "candidate.matching.pipeline")
 public class CandidateMatchingPipelineProperties {
 
-  private int retrievalTopK = 120;
+  private int retrievalTopK = 1200;
+  private int maxCandidates = 100;
   private int mapBatchSize = 3;
   private int shortlistSize = 3;
   private int resultLimit = 3;
@@ -17,7 +18,15 @@ public class CandidateMatchingPipelineProperties {
   }
 
   public void setRetrievalTopK(int retrievalTopK) {
-    this.retrievalTopK = requireRange("retrieval-top-k", retrievalTopK, 1, 1000);
+    this.retrievalTopK = requireRange("retrieval-top-k", retrievalTopK, 1, 10000);
+  }
+
+  public int getMaxCandidates() {
+    return maxCandidates;
+  }
+
+  public void setMaxCandidates(int maxCandidates) {
+    this.maxCandidates = requireRange("max-candidates", maxCandidates, 1, 1000);
   }
 
   public int getMapBatchSize() {
