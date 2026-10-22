@@ -5,6 +5,8 @@ resumes, and find candidates whose experience best matches an open position. It 
 retrieval over indexed resume content with an AI ranking pipeline and returns up to three
 evidence-backed candidate matches.
 
+![recruitment-agent-matches-01.png](docs/images/recruitment-agent-matches-01.png)
+
 ## Features
 
 - Browse, create, and edit job offers stored in MongoDB.
@@ -16,6 +18,10 @@ evidence-backed candidate matches.
   skills and relevant work experience.
 - Download an uploaded resume through the application.
 - Use a single-page frontend built with HTML, CSS, Bootstrap, and vanilla JavaScript.
+
+![recruitment-agent-new-job-offer-01.png](docs/images/recruitment-agent-new-job-offer-01.png)
+<br/><br/>
+![recruitment-agent-explanations-01.png](docs/images/recruitment-agent-explanations-01.png)
 
 ## Architecture
 
