@@ -16,10 +16,10 @@ class CandidateMatchingPipelinePropertiesTest {
     CandidateMatchingPipelineProperties defaults = new CandidateMatchingPipelineProperties();
     assertEquals(1200, defaults.getRetrievalTopK());
     assertEquals(100, defaults.getMaxCandidates());
-    assertEquals(3, defaults.getMapBatchSize());
+    assertEquals(5, defaults.getMapBatchSize());
     assertEquals(3, defaults.getShortlistSize());
     assertEquals(3, defaults.getResultLimit());
-    assertEquals(2, defaults.getMaxConcurrency());
+    assertEquals(5, defaults.getMaxConcurrency());
     assertEquals(24000, defaults.getMaxEvidenceCharsPerCandidate());
 
     CandidateMatchingPipelineProperties configured =
@@ -54,8 +54,8 @@ class CandidateMatchingPipelinePropertiesTest {
     assertThrows(IllegalArgumentException.class, () -> properties.setMaxCandidates(1001));
     assertThrows(IllegalArgumentException.class, () -> properties.setMapBatchSize(11));
     assertThrows(IllegalArgumentException.class, () -> properties.setShortlistSize(21));
-    assertThrows(IllegalArgumentException.class, () -> properties.setResultLimit(4));
-    assertThrows(IllegalArgumentException.class, () -> properties.setMaxConcurrency(9));
+    assertThrows(IllegalArgumentException.class, () -> properties.setResultLimit(6));
+    assertThrows(IllegalArgumentException.class, () -> properties.setMaxConcurrency(11));
     assertThrows(IllegalArgumentException.class, () -> properties.setMaxEvidenceCharsPerCandidate(0));
     assertThrows(IllegalArgumentException.class, () -> properties.setMaxEvidenceCharsPerCandidate(100001));
   }

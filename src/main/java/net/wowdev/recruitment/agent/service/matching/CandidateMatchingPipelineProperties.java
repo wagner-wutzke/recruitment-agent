@@ -7,10 +7,10 @@ public class CandidateMatchingPipelineProperties {
 
   private int retrievalTopK = 1200;
   private int maxCandidates = 100;
-  private int mapBatchSize = 3;
+  private int mapBatchSize = 5;
   private int shortlistSize = 3;
   private int resultLimit = 3;
-  private int maxConcurrency = 2;
+  private int maxConcurrency = 5;
   private int maxEvidenceCharsPerCandidate = 24000;
 
   public int getRetrievalTopK() {
@@ -50,7 +50,7 @@ public class CandidateMatchingPipelineProperties {
   }
 
   public void setResultLimit(int resultLimit) {
-    this.resultLimit = requireRange("result-limit", resultLimit, 1, 3);
+    this.resultLimit = requireRange("result-limit", resultLimit, 1, 5);
   }
 
   public int getMaxConcurrency() {
@@ -66,7 +66,7 @@ public class CandidateMatchingPipelineProperties {
   }
 
   public void setMaxConcurrency(int maxConcurrency) {
-    this.maxConcurrency = requireRange("max-concurrency", maxConcurrency, 1, 8);
+    this.maxConcurrency = requireRange("max-concurrency", maxConcurrency, 1, 10);
   }
 
   private int requireRange(String property, int value, int minimum, int maximum) {

@@ -106,24 +106,34 @@ it does not guarantee that a model's judgment is objectively correct.
 
 Candidate matching is split into bounded retrieval, map, and reduce stages.
 
-1. **Retrieve:** Build a search question from the selected job offer’s position, description,
-   qualifications, responsibilities, nice-to-have criteria, location, and working mode. Search up
-   to the configured chunk top-K using the similarity threshold. Group hits by normalized email and
-   resume version, batch-check current versions against MongoDB, discard stale versions, and retain
-   up to the configured number of distinct candidates. Candidates are ordered by their strongest
-   hit score; normalized email and document ID break ties. If scores are unavailable, vector result
-   order is used. The retriever then hydrates each selected candidate sequentially with a
-   candidate/version-filtered Chroma search, up to the resume index chunk cap. Only validated
-   hydration results are returned; seed hits are discovery signals and are not included directly.
-2. **Assemble evidence:** Validate each result’s candidate and document metadata against the current
-   MongoDB resume record, remove stale or duplicate chunks, and group evidence by candidate. This
-   prevents an older indexed resume version from being ranked after an upload replaces it.
-3. **Map:** Score candidates independently in bounded batches. Map scores order candidates for
-   shortlist selection; evidence references and claims are checked against the supplied resume
-   chunks.
-4. **Reduce:** Send only the shortlist and its retrieved evidence to one final ranking request.
-   Validate the final claims and probabilities, resolve displayed identities from MongoDB, and
-   return at most three candidates.
+1. **Retrieve broadly.** Query the vector store with the offer’s position, required skills,
+   responsibilities, location, and working mode. Retrieve a configurable pool—perhaps 30–50 resume
+   chunks—instead of only 3. The exact value should be tuned against vector store quality, latency,
+   and model context limits.
+
+2. **Map over chunks.** For each retrieved chunk, assess relevance to the job and extract only
+   evidence present in that chunk: candidate identifier, skills, relevant experience, location, and
+   work mode. Keep the vector similarity score as a retrieval signal; don’t treat it as the final
+   match score.
+
+3. **Group by candidate.** Use a stable candidate ID in document metadata, if available. Group
+   chunks by that ID so multiple chunks from one resume don’t crowd out distinct candidates. If
+   metadata lacks an ID, adding one at resume ingestion is a useful prerequisite.
+
+4. **Reduce evidence per candidate.** Combine a candidate’s chunks, remove duplicates, and produce a
+   compact evidence summary with source chunk references. Score each candidate against required
+   criteria and nice-to-haves. Missing evidence should stay unknown rather than being treated as
+   either a match or a mismatch.
+
+5. **Use tiers to spend model effort selectively.** Apply inexpensive filtering or scoring first,
+   then ask the model for a deeper structured evaluation of a smaller shortlist—say the top 10–15
+   candidates. A final comparison pass can order that shortlist and return up to three candidates.
+   Keep the required and preferred criteria distinct, and validate identities and evidence against
+   the retrieved documents.
+
+6. **Return three unique candidates.** Sort by the final evaluation, deduplicate by candidate
+   ID/email, assign positions, then take the first three. Return fewer when fewer than three
+   candidates have sufficient retrieved evidence; never fill empty slots by inventing candidates.
 
 Map scores are internal selection values; they are not exposed as final match probabilities. A
 failed batch or invalid final response fails the matching request rather than returning a partial
@@ -289,8 +299,8 @@ through Spring environment variables or properties.
 | `OPENAI_API_KEY`                                               | Empty                       | API key for candidate ranking chat requests |
 | `CANDIDATE_MATCHING_MODEL`                                     | `gpt-5.6-sol`               | Chat model used for map and final ranking   |
 | `CHROMA_HOST` / `CHROMA_PORT`                                  | `http://localhost` / `8000` | ChromaDB endpoint                           |
-| `CANDIDATE_MATCHING_PIPELINE_RETRIEVAL_TOP_K`                  | `1200`                      | Maximum chunks used to discover candidates   |
-| `CANDIDATE_MATCHING_PIPELINE_MAX_CANDIDATES`                   | `100`                       | Maximum distinct candidates evaluated        |
+| `CANDIDATE_MATCHING_PIPELINE_RETRIEVAL_TOP_K`                  | `1200`                      | Maximum chunks used to discover candidates  |
+| `CANDIDATE_MATCHING_PIPELINE_MAX_CANDIDATES`                   | `100`                       | Maximum distinct candidates evaluated       |
 | `CANDIDATE_MATCHING_PIPELINE_MAP_BATCH_SIZE`                   | `3`                         | Candidates evaluated per map batch          |
 | `CANDIDATE_MATCHING_PIPELINE_SHORTLIST_SIZE`                   | `3`                         | Candidates passed to final ranking          |
 | `CANDIDATE_MATCHING_PIPELINE_MAX_CONCURRENCY`                  | `5`                         | Concurrent map requests                     |
@@ -303,24 +313,28 @@ adjusted with `RESUME_INDEXING_CHUNK_SIZE`, `RESUME_INDEXING_MIN_CHUNK_SIZE_CHAR
 
 The candidate matching `ChatClient` uses Spring AI's `SimpleLoggerAdvisor` as a default advisor.
 Prompt/completion observation logging is enabled, and the advisor logger is set to `DEBUG`; these
-logs can contain full job and resume content, candidate contact details, and model responses. Restrict
-access to application logs and avoid enabling these settings in environments where that data must
-not be recorded.
+logs can contain full job and resume content, candidate contact details, and model responses.
+Restrict access to application logs and avoid enabling these settings in environments where that 
+data must not be recorded.
 
 ## Application Gaps
 
 ### Chat diagnostics can record candidate data
+
 The current Spring AI observation settings and `SimpleLoggerAdvisor` DEBUG logger can write prompt
 and completion payloads—including resume content, candidate contact details, and model responses—to
-application logs. This conflicts with the ranking feature's privacy requirement not to log that data.
+application logs. This conflicts with the ranking feature's privacy requirement not to log that
+data.
 Restrict log access and retention; the application is not compliant with that requirement until
 logging is redacted or disabled.
 
 ### Resume replacement can leave inconsistent data
+
 The upload path writes new vectors, saves MongoDB metadata, then deletes old vectors. If the MongoDB
 save fails, the new vectors are rolled back; but if deleting old vectors fails, the upload still
 reports success and leaves stale chunks. A crash between these operations can also leave MongoDB,
 ChromaDB, and the retained PDF out of sync. See `ResumeUploadService.java`.
 
 ### Same-name candidates can overwrite retained PDFs
+
 Files are named from candidate name, but resume identity is email. See `ResumeFileStorage.java`.
