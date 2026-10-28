@@ -17,6 +17,7 @@ import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.entity.ResumeDocument;
 import net.wowdev.recruitment.agent.repository.ResumeRepository;
 import net.wowdev.recruitment.agent.service.resume.ResumeIndexingProperties;
+import org.jspecify.annotations.NonNull;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -69,10 +70,16 @@ public class CandidateResumeRetriever {
             mergeSearchResults(seedResults, search(query, retrievalLimit, null), retrievalLimit);
       }
     }
-    if (seedResults == null || seedResults.isEmpty()) {
+    if (seedResults.isEmpty()) {
       return List.of();
     }
 
+    Map<String, Document> evidenceById = executeSimilaritySearchOnVectorDB(seedResults, query);
+    return List.copyOf(evidenceById.values());
+  }
+
+  private @NonNull Map<String, Document> executeSimilaritySearchOnVectorDB(
+      List<Document> seedResults, String query) {
     List<CandidateVersion> selectedCandidates = selectCurrentCandidates(seedResults);
     Map<String, Document> evidenceById = new LinkedHashMap<>();
     for (CandidateVersion candidate : selectedCandidates) {
@@ -85,13 +92,11 @@ public class CandidateResumeRetriever {
               .build();
       List<Document> candidateChunks =
           vectorStore.similaritySearch(completeCandidateEvidenceRequest);
-      if (candidateChunks != null) {
-        candidateChunks.stream()
-            .filter(document -> belongsToCandidateVersion(document, candidate))
-            .forEach(document -> evidenceById.putIfAbsent(document.getId(), document));
-      }
+      candidateChunks.stream()
+          .filter(document -> belongsToCandidateVersion(document, candidate))
+          .forEach(document -> evidenceById.putIfAbsent(document.getId(), document));
     }
-    return List.copyOf(evidenceById.values());
+    return evidenceById;
   }
 
   private List<Document> search(String query, int topK, Filter.Expression filter) {
@@ -157,7 +162,7 @@ public class CandidateResumeRetriever {
         continue;
       }
       String id = document.getId();
-      if (id == null || id.isBlank() || seenIds.add(id)) {
+      if (id.isBlank() || seenIds.add(id)) {
         destination.add(document);
       }
     }
@@ -230,7 +235,7 @@ public class CandidateResumeRetriever {
   }
 
   private boolean belongsToCandidateVersion(Document document, CandidateVersion candidate) {
-    if (document == null || document.getId() == null || document.getId().isBlank()) {
+    if (document == null || document.getId().isBlank()) {
       return false;
     }
     Object email = document.getMetadata().get("candidateEmail");
