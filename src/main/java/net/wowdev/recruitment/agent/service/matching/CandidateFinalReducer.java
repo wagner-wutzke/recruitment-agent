@@ -1,5 +1,6 @@
 package net.wowdev.recruitment.agent.service.matching;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -21,6 +22,7 @@ import net.wowdev.recruitment.agent.service.matching.model.CandidateResumeEviden
 import net.wowdev.recruitment.agent.service.matching.model.EvidenceBackedClaim;
 import net.wowdev.recruitment.agent.service.matching.model.EvidenceCitation;
 import net.wowdev.recruitment.agent.service.matching.model.RankedCandidate;
+import org.jspecify.annotations.NonNull;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -62,10 +64,15 @@ public class CandidateFinalReducer {
             .entity(CandidateFinalResponse.class);
     validate(response, shortlist);
 
+    if (response == null) {
+      return List.of();
+    }
+
     Map<String, CandidateResumeEvidence> evidenceByEmail =
         shortlist.stream()
             .collect(Collectors.toMap(candidate -> normalize(candidate.candidateEmail()), c -> c));
     List<RankedCandidate> ranked = new ArrayList<>();
+
     for (CandidateFinalResult result : response.candidates()) {
       CandidateResumeEvidence candidate = evidenceByEmail.get(normalize(result.candidateEmail()));
       ranked.add(
@@ -80,7 +87,8 @@ public class CandidateFinalReducer {
         Comparator.comparingDouble(RankedCandidate::matchingProbability)
             .reversed()
             .thenComparing(candidate -> normalize(candidate.candidateEmail())));
-    return List.copyOf(ranked.subList(0, Math.min(ranked.size(), pipelineProperties.getResultLimit())));
+    return List.copyOf(
+        ranked.subList(0, Math.min(ranked.size(), pipelineProperties.getResultLimit())));
   }
 
   List<CandidateResumeEvidence> shortlist(
@@ -93,7 +101,8 @@ public class CandidateFinalReducer {
           || result.mapScore() < 0
           || result.mapScore() > 100
           || resultByEmail.putIfAbsent(normalize(result.candidateEmail()), result) != null) {
-        throw invalidFinalResponse("map results are missing, duplicated, malformed, or outside the candidate pool");
+        throw invalidFinalResponse(
+            "map results are missing, duplicated, malformed, or outside the candidate pool");
       }
     }
     if (candidates.size() != resultByEmail.size()) {
@@ -117,14 +126,32 @@ public class CandidateFinalReducer {
 
   private String finalRequest(JobOffer offer, List<CandidateResumeEvidence> shortlist) {
     try {
+      String candidatesContext = prettifyCandidatesContext(shortlist);
+      String offerContext = prettifyOfferContext(offer);
       return finalPrompt.getContentAsString(StandardCharsets.UTF_8)
-          + "\nJOB CRITERIA JSON:\n"
-          + objectMapper.writeValueAsString(offer)
-          + "\nSHORTLIST CANDIDATE EVIDENCE JSON:\n"
-          + objectMapper.writeValueAsString(shortlist);
+          + "\n# # # # JOB CRITERIA JSON # # # # \n"
+          + offerContext
+          + "\n\n# # # # SHORTLIST CANDIDATE EVIDENCE JSON # # # #\n"
+          + candidatesContext;
     } catch (IOException exception) {
-      throw new IllegalStateException("Could not prepare final candidate ranking request.", exception);
+      throw new IllegalStateException(
+          "Could not prepare final candidate ranking request.", exception);
     }
+  }
+
+  private @NonNull String prettifyOfferContext(JobOffer offer) throws JsonProcessingException {
+    String offerContext = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(offer);
+    offerContext = offerContext.replace("\\n", "\n");
+    return offerContext;
+  }
+
+  private @NonNull String prettifyCandidatesContext(List<CandidateResumeEvidence> shortlist)
+      throws JsonProcessingException {
+    String candidatesContext = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(
+        shortlist);
+    candidatesContext = candidatesContext.replace(" \\n\\n", "\n");
+    candidatesContext = candidatesContext.replace(" \\n", "");
+    return candidatesContext;
   }
 
   void validate(CandidateFinalResponse response, List<CandidateResumeEvidence> shortlist) {
@@ -145,7 +172,8 @@ public class CandidateFinalReducer {
           || result.matchedSkills() == null
           || result.relevantWorkExperiences() == null
           || result.probabilityEvidence() == null) {
-        throw invalidFinalResponse("result is missing a required field or has an invalid probability");
+        throw invalidFinalResponse(
+            "result is missing a required field or has an invalid probability");
       }
       String email = normalize(result.candidateEmail());
       CandidateResumeEvidence candidate = allowed.get(email);
@@ -156,22 +184,30 @@ public class CandidateFinalReducer {
           || !validCitations(result.probabilityEvidence(), candidate)
           || !validClaims(result.matchedSkills(), candidate)
           || !validClaims(result.relevantWorkExperiences(), candidate)) {
-        throw invalidFinalResponse("claims or probability evidence do not quote the candidate's chunks");
+        throw invalidFinalResponse(
+            "claims or probability evidence do not quote the candidate's chunks");
       }
     }
   }
 
   private boolean validClaims(List<EvidenceBackedClaim> claims, CandidateResumeEvidence candidate) {
-    return claims.stream().allMatch(claim -> claim != null && nonBlank(claim.text()) && validCitation(
-        new EvidenceCitation(claim.chunkId(), claim.quote()), candidate));
+    return claims.stream()
+        .allMatch(
+            claim ->
+                claim != null
+                    && nonBlank(claim.text())
+                    && validCitation(
+                        new EvidenceCitation(claim.chunkId(), claim.quote()), candidate));
   }
 
-  private boolean validCitations(List<EvidenceCitation> citations, CandidateResumeEvidence candidate) {
+  private boolean validCitations(
+      List<EvidenceCitation> citations, CandidateResumeEvidence candidate) {
     return citations.stream().allMatch(citation -> validCitation(citation, candidate));
   }
 
   private boolean validCitation(EvidenceCitation citation, CandidateResumeEvidence candidate) {
-    if (citation == null || !nonBlank(citation.chunkId()) || !nonBlank(citation.quote())) return false;
+    if (citation == null || !nonBlank(citation.chunkId()) || !nonBlank(citation.quote()))
+      return false;
     String normalizedQuote = normalizeWhitespace(citation.quote());
     return candidate.chunks().stream()
         .anyMatch(
@@ -184,13 +220,16 @@ public class CandidateFinalReducer {
     return WHITESPACE.matcher(text).replaceAll(" ").strip();
   }
 
-  private boolean nonBlank(String value) { return value != null && !value.isBlank(); }
+  private boolean nonBlank(String value) {
+    return value != null && !value.isBlank();
+  }
 
   private String normalize(String email) {
     return email.trim().toLowerCase(Locale.ROOT);
   }
 
   private IllegalStateException invalidFinalResponse(String reason) {
-    return new IllegalStateException("Final candidate ranking returned invalid data: " + reason + ".");
+    return new IllegalStateException(
+        "Final candidate ranking returned invalid data: " + reason + ".");
   }
 }

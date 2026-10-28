@@ -1,5 +1,6 @@
 package net.wowdev.recruitment.agent.service.matching;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,18 +11,19 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.regex.Pattern;
 import net.wowdev.recruitment.agent.entity.JobOffer;
 import net.wowdev.recruitment.agent.service.matching.model.CandidateMapResponse;
 import net.wowdev.recruitment.agent.service.matching.model.CandidateMapResult;
 import net.wowdev.recruitment.agent.service.matching.model.CandidateResumeEvidence;
 import net.wowdev.recruitment.agent.service.matching.model.EvidenceBackedClaim;
 import net.wowdev.recruitment.agent.service.matching.model.EvidenceCitation;
+import org.jspecify.annotations.NonNull;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -46,7 +48,8 @@ public class CandidateMapEvaluator {
     this.objectMapper = new ObjectMapper();
   }
 
-  public List<CandidateMapResult> evaluate(JobOffer offer, List<CandidateResumeEvidence> candidates) {
+  public List<CandidateMapResult> evaluate(
+      JobOffer offer, List<CandidateResumeEvidence> candidates) {
     if (candidates.isEmpty()) {
       return List.of();
     }
@@ -99,13 +102,13 @@ public class CandidateMapEvaluator {
     int batchSize = pipelineProperties.getMapBatchSize();
     List<List<CandidateResumeEvidence>> batches = new ArrayList<>();
     for (int start = 0; start < candidates.size(); start += batchSize) {
-      batches.add(List.copyOf(candidates.subList(start, Math.min(start + batchSize, candidates.size()))));
+      batches.add(
+          List.copyOf(candidates.subList(start, Math.min(start + batchSize, candidates.size()))));
     }
     return List.copyOf(batches);
   }
 
-  List<CandidateMapResult> evaluateBatch(
-      JobOffer offer, List<CandidateResumeEvidence> candidates) {
+  List<CandidateMapResult> evaluateBatch(JobOffer offer, List<CandidateResumeEvidence> candidates) {
     CandidateMapResponse response =
         chatClient
             .prompt()
@@ -117,14 +120,25 @@ public class CandidateMapEvaluator {
 
   private String mapRequest(JobOffer offer, List<CandidateResumeEvidence> candidates) {
     try {
+      String candidatesContext = prettifyCandidatesContext(candidates);
       return mapPrompt.getContentAsString(StandardCharsets.UTF_8)
-          + "\nJOB CRITERIA JSON:\n"
-          + objectMapper.writeValueAsString(offer)
-          + "\nCANDIDATE EVIDENCE JSON:\n"
-          + objectMapper.writeValueAsString(candidates);
+          + "\n# # # # JOB CRITERIA JSON # # # # \n"
+          + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(offer)
+          + "\n# # # # CANDIDATE EVIDENCE JSON # # # # \n"
+          + candidatesContext;
     } catch (IOException exception) {
       throw new IllegalStateException("Could not prepare candidate map request.", exception);
     }
+  }
+
+  private @NonNull String prettifyCandidatesContext(List<CandidateResumeEvidence> candidates)
+      throws JsonProcessingException {
+    String candidatesContext = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(
+        candidates);
+    candidatesContext = candidatesContext.replace(" \\n\\n", "\n");
+    candidatesContext = candidatesContext.replace(" \\n", "");
+    candidatesContext = candidatesContext.replace("{\"chunkId", "\n{\"chunkId");
+    return candidatesContext;
   }
 
   List<CandidateMapResult> validateAndSanitizeResponse(
@@ -152,9 +166,9 @@ public class CandidateMapEvaluator {
       if (candidate == null || !returned.add(candidateKey)) {
         throw invalidMapResponse("candidate identity is outside the batch or duplicated");
       }
-      if (result.scoreEvidence().isEmpty()
-          || !validCitations(result.scoreEvidence(), candidate)) {
-        throw invalidMapResponse("score evidence is missing or does not quote the candidate's chunks");
+      if (result.scoreEvidence().isEmpty() || !validCitations(result.scoreEvidence(), candidate)) {
+        throw invalidMapResponse(
+            "score evidence is missing or does not quote the candidate's chunks");
       }
       sanitized.add(
           new CandidateMapResult(
@@ -181,16 +195,19 @@ public class CandidateMapEvaluator {
             claim ->
                 claim != null
                     && nonBlank(claim.text())
-                    && validCitation(new EvidenceCitation(claim.chunkId(), claim.quote()), candidate))
+                    && validCitation(
+                        new EvidenceCitation(claim.chunkId(), claim.quote()), candidate))
         .toList();
   }
 
-  private boolean validCitations(List<EvidenceCitation> citations, CandidateResumeEvidence candidate) {
+  private boolean validCitations(
+      List<EvidenceCitation> citations, CandidateResumeEvidence candidate) {
     return citations.stream().allMatch(citation -> validCitation(citation, candidate));
   }
 
   private boolean validCitation(EvidenceCitation citation, CandidateResumeEvidence candidate) {
-    if (citation == null || !nonBlank(citation.chunkId()) || !nonBlank(citation.quote())) return false;
+    if (citation == null || !nonBlank(citation.chunkId()) || !nonBlank(citation.quote()))
+      return false;
     String normalizedQuote = normalizeWhitespace(citation.quote());
     return candidate.chunks().stream()
         .anyMatch(
@@ -203,13 +220,16 @@ public class CandidateMapEvaluator {
     return WHITESPACE.matcher(text).replaceAll(" ").strip();
   }
 
-  private boolean nonBlank(String value) { return value != null && !value.isBlank(); }
+  private boolean nonBlank(String value) {
+    return value != null && !value.isBlank();
+  }
 
   private String normalize(String email) {
     return email.trim().toLowerCase(Locale.ROOT);
   }
 
   private IllegalStateException invalidMapResponse(String reason) {
-    return new IllegalStateException("Candidate map evaluation returned invalid data: " + reason + ".");
+    return new IllegalStateException(
+        "Candidate map evaluation returned invalid data: " + reason + ".");
   }
 }
