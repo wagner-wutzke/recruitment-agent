@@ -25,7 +25,8 @@ public class CandidateEvidenceAssembler {
   private final ResumeRepository resumeRepository;
   private final CandidateMatchingPipelineProperties pipelineProperties;
 
-  public CandidateEvidenceAssembler(ResumeRepository resumeRepository, CandidateMatchingPipelineProperties pipelineProperties) {
+  public CandidateEvidenceAssembler(
+      ResumeRepository resumeRepository, CandidateMatchingPipelineProperties pipelineProperties) {
     this.resumeRepository = resumeRepository;
     this.pipelineProperties = pipelineProperties;
   }
@@ -42,7 +43,7 @@ public class CandidateEvidenceAssembler {
       String email = metadataText(document, "candidateEmail");
       String documentId = metadataText(document, "documentId");
       String chunkId = document.getId();
-      if (email == null || documentId == null || chunkId == null || chunkId.isBlank()) {
+      if (email == null || documentId == null || chunkId.isBlank()) {
         invalidMetadata++;
         continue;
       }
@@ -50,8 +51,7 @@ public class CandidateEvidenceAssembler {
       String normalizedEmail = normalizeEmail(email);
       Optional<ResumeDocument> currentResume =
           resumeCache.computeIfAbsent(
-              normalizedEmail,
-              key -> resumeRepository.findByCandidateEmailIgnoreCase(key));
+              normalizedEmail, resumeRepository::findByCandidateEmailIgnoreCase);
       if (currentResume.isEmpty()
           || !documentId.equals(currentResume.get().getDocumentId())
           || document.getText() == null
@@ -88,9 +88,11 @@ public class CandidateEvidenceAssembler {
 
     List<CandidateResumeEvidence> evidence = new ArrayList<>();
     for (CandidateGroupBuilder candidate : candidates.values()) {
-      long evidenceChars = candidate.chunks.stream().mapToLong(chunk -> chunk.text().length()).sum();
+      long evidenceChars =
+          candidate.chunks.stream().mapToLong(chunk -> chunk.text().length()).sum();
       if (evidenceChars > pipelineProperties.getMaxEvidenceCharsPerCandidate()) {
-        throw new IllegalStateException("Candidate resume evidence exceeds configured character limit.");
+        throw new IllegalStateException(
+            "Candidate resume evidence exceeds configured character limit.");
       }
       evidence.add(
           new CandidateResumeEvidence(

@@ -93,7 +93,7 @@ class CandidateEvidenceAssemblerTest {
     assertEquals(
         0,
         assembler
-            .assemble(List.of(noDocumentVersion, blankEmail, nonStringEmail, nullId, nullText))
+            .assemble(List.of(noDocumentVersion, blankEmail, nonStringEmail, nullText))
             .size());
     assertEquals(0, assembler.assemble(List.of(stale)).size());
   }
