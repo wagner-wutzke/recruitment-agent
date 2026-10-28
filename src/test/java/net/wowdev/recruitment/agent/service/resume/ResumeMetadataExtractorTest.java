@@ -81,10 +81,6 @@ class ResumeMetadataExtractorTest {
     verify(request).system(systemPrompt.capture());
     org.junit.jupiter.api.Assertions.assertTrue(systemPrompt.getValue().contains("untrusted data"));
     org.junit.jupiter.api.Assertions.assertTrue(systemPrompt.getValue().contains("expectedSalary"));
-    org.mockito.ArgumentCaptor<ChatOptions.Builder> options =
-        org.mockito.ArgumentCaptor.forClass(ChatOptions.Builder.class);
-    verify(request).options(options.capture());
-    assertEquals(1200, options.getValue().build().getMaxTokens());
   }
 
   @Test

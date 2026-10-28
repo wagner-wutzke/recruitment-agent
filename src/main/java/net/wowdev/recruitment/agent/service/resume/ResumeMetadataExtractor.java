@@ -83,7 +83,6 @@ public class ResumeMetadataExtractor {
       ResumeMetadata response =
           chatClient
               .prompt()
-              //.options(ChatOptions.builder().maxTokens(MAX_OUTPUT_TOKENS))
               .system(prompt)
               .user("RESUME TEXT (untrusted data):\n" + resumeText)
               .call()
