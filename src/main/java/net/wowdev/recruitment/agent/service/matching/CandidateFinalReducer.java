@@ -129,9 +129,9 @@ public class CandidateFinalReducer {
       String candidatesContext = prettifyCandidatesContext(shortlist);
       String offerContext = prettifyOfferContext(offer);
       return finalPrompt.getContentAsString(StandardCharsets.UTF_8)
-          + "\n# # # # JOB CRITERIA JSON # # # # \n"
+          + "\n# # # # FINAL JOB CRITERIA JSON # # # # \n"
           + offerContext
-          + "\n\n# # # # SHORTLIST CANDIDATE EVIDENCE JSON # # # #\n"
+          + "\n\n# # # # FINAL SHORTLIST CANDIDATE EVIDENCE JSON # # # #\n"
           + candidatesContext;
     } catch (IOException exception) {
       throw new IllegalStateException(
