@@ -140,7 +140,7 @@ class ResumeMetadataExtractorTest {
   }
 
   @Test
-  void returnsEmptyMetadataWhenModelTimesOut() throws Exception {
+  void returnsEmptyMetadataWhenModelTimesOut() {
     ResumeIndexingProperties properties = new ResumeIndexingProperties();
     properties.setMetadataExtractionTimeout(java.time.Duration.ofMillis(20));
     CountDownLatch releaseModelCall = new CountDownLatch(1);

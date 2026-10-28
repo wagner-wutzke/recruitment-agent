@@ -189,7 +189,8 @@ therefore exceed that configured per-request value. Retrieval, candidate hydrati
 final reducer call remain sequential within each request. Metadata extraction during upload also
 uses a virtual thread with a timeout, but it is a separate workflow from candidate matching.
 <p style="text-align: center">
-    <img src="docs/images/map-reduce-tiered-ranking-pipeline.png" width="300">
+    <img src="docs/images/map-reduce-tiered-ranking-pipeline.png" width="300" 
+        alt="map-reduce-tiered-ranking-pipeline">
 </p>
 
 ## Spec-Driven Development

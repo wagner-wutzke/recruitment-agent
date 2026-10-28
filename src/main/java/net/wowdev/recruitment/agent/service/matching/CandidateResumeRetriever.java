@@ -183,7 +183,6 @@ public class CandidateResumeRetriever {
           && documentId instanceof String resumeDocumentId
           && !resumeDocumentId.isBlank()) {
         String displayEmail = candidateEmail.trim();
-        String normalizedEmail = normalizeEmail(displayEmail);
         CandidateVersion candidate =
             new CandidateVersion(displayEmail, resumeDocumentId.trim(), document.getScore(), rank);
         candidates.merge(candidate.key(), candidate, CandidateVersion::stronger);
