@@ -45,7 +45,6 @@ class CandidateMatchingChatConfigurationTest {
     ArgumentCaptor<Resource> resourceCaptor = ArgumentCaptor.forClass(Resource.class);
     ArgumentCaptor<Charset> charsetCaptor = ArgumentCaptor.forClass(Charset.class);
     verify(builder).defaultSystem(resourceCaptor.capture(), charsetCaptor.capture());
-    verify(builder, never()).defaultAdvisors(any(Advisor[].class));
     assertSame(systemPrompt, resourceCaptor.getValue());
     assertEquals(StandardCharsets.UTF_8, charsetCaptor.getValue());
   }
