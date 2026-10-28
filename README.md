@@ -274,13 +274,14 @@ created under `.codex/specs/`.
 From the repository root, start MongoDB with authentication and persistent local data:
 
 ```bash
-mkdir -p data/mongodb data/chroma
+mkdir -p data/mongodb data/mongodb
 
 docker run -d --name recruitment-mongodb \
   -p 27017:27017 \
-  -v "$PWD/data/mongodb:/data/db" \
+  -v "$PWD/data/mongodb:/data/mongodb" \
   -e MONGO_INITDB_ROOT_USERNAME=admin \
   -e MONGO_INITDB_ROOT_PASSWORD=secret_password \
+  -e GLIBC_TUNABLES=glibc.pthread.rseq=1 \
   mongo:latest
 ```
 
